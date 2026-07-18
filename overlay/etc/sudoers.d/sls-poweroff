@@ -1,0 +1,3 @@
+# Allow appliance user to power off without a password (Quit → shutdown path).
+# Installed by install-appliance.sh (mode 0440).
+sls ALL=(root) NOPASSWD: /sbin/poweroff, /usr/sbin/poweroff, /sbin/shutdown, /usr/sbin/shutdown, /bin/systemctl poweroff, /usr/bin/systemctl poweroff

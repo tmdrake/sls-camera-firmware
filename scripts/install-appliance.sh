@@ -209,8 +209,21 @@ fi
 deactivate
 chown -R "$SLS_USER:$SLS_USER" "$VIEWER/.venv" 2>/dev/null || true
 
-# launcher
+# launcher (Quit → poweroff by default; see SLS_ON_QUIT in overlay launcher)
 install -D -m 755 "$OVERLAY/usr/local/bin/sls-camera" /usr/local/bin/sls-camera
+
+# passwordless poweroff for appliance user (launcher fallback)
+if [[ -f "$OVERLAY/etc/sudoers.d/sls-poweroff" ]]; then
+  install -D -m 440 "$OVERLAY/etc/sudoers.d/sls-poweroff" /etc/sudoers.d/sls-poweroff
+  # rewrite user name if SLS_USER overridden
+  if [[ "$SLS_USER" != "sls" ]]; then
+    sed -i "s/^sls /${SLS_USER} /" /etc/sudoers.d/sls-poweroff
+  fi
+  if command -v visudo >/dev/null 2>&1; then
+    visudo -cf /etc/sudoers.d/sls-poweroff >/dev/null 2>&1 \
+      || echo "WARN: sudoers.d/sls-poweroff failed visudo check" >&2
+  fi
+fi
 
 # captures
 mkdir -p "$DATA_CAPTURES"
@@ -220,6 +233,19 @@ chown -R "$SLS_USER:$SLS_USER" /data 2>/dev/null || chown -R "$SLS_USER:$SLS_USE
 USER_HOME="$(getent passwd "$SLS_USER" | cut -d: -f6)"
 install -D -m 644 "$OVERLAY/home/sls/.config/autostart/sls-camera.desktop" \
   "$USER_HOME/.config/autostart/sls-camera.desktop"
+# LXQt power management: no idle/battery/lid popups (app owns brightness)
+if [[ -f "$OVERLAY/home/sls/.config/lxqt/lxqt-powermanagement.conf" ]]; then
+  install -D -m 644 "$OVERLAY/home/sls/.config/lxqt/lxqt-powermanagement.conf" \
+    "$USER_HOME/.config/lxqt/lxqt-powermanagement.conf"
+fi
+# User-level Hidden=true overrides for update/power autostart (belt + suspenders)
+for f in lubuntu-update-autostart.desktop lxqt-powermanagement.desktop lxqt-xscreensaver-autostart.desktop; do
+  cat >"$USER_HOME/.config/autostart/$f" <<'EOF'
+[Desktop Entry]
+Hidden=true
+X-GNOME-Autostart-enabled=false
+EOF
+done
 chown -R "$SLS_USER:$SLS_USER" "$USER_HOME/.config"
 
 # LightDM autologin if present

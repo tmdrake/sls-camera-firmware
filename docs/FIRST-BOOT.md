@@ -25,6 +25,28 @@ Without a Kinect (VM smoke test), run:
 /usr/local/bin/sls-camera --demo
 ```
 
+### Quit → power off (appliance)
+
+The firmware launcher `/usr/local/bin/sls-camera` defaults to **shutting down the machine** when the operator confirms Quit (button / Q / window close). That keeps a field tablet from dropping to a bare desktop.
+
+| `SLS_ON_QUIT` | Behavior |
+|---------------|----------|
+| `shutdown` (default) | Power off after app exits |
+| `restart` | Relaunch the app (kiosk loop) |
+| `none` | Exit to desktop only |
+
+Examples:
+
+```bash
+# temporary: quit stays on desktop
+SLS_ON_QUIT=none /usr/local/bin/sls-camera
+
+# permanent for a session user: put in ~/.config/environment.d/sls.conf or autostart
+# SLS_ON_QUIT=restart
+```
+
+Lab VM credentials: **`sls` / `20260717`** — see [VM-REBUILD.md](VM-REBUILD.md).
+
 ### Screenshots (Phase 1 VM — Lubuntu 26.04)
 
 Full-size PNGs live in [`docs/images/`](images/README.md).
