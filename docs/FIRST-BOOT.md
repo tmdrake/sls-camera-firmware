@@ -5,9 +5,24 @@
 After install on a blank Ubuntu/Lubuntu system:
 
 1. Reboot  
-2. Auto-login as user **`sls`** (if LightDM/GDM config applied)  
-3. Autostart launches **`/usr/local/bin/sls-camera`**  
+2. Auto-login as user **`sls`** (if LightDM/GDM config applied; **Lubuntu 26.04 uses SDDM** — autologin may need a separate SDDM config)  
+3. Autostart launches **`/usr/local/bin/sls-camera`** when logged in as `sls`  
 4. SLS app opens fullscreen  
+
+Without a Kinect (VM smoke test), run:
+
+```bash
+/usr/local/bin/sls-camera --demo
+```
+
+### Screenshots (Phase 1 VM — Lubuntu 26.04)
+
+Full-size PNGs live in [`docs/images/`](images/README.md).
+
+| | |
+|--|--|
+| Desktop after install | ![Lubuntu desktop](images/01-guest-desktop.png) |
+| SLS Camera `--demo` | ![SLS demo UI](images/02-sls-demo-app.png) |
 
 Operator should only need:
 

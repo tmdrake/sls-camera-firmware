@@ -1,6 +1,10 @@
 # System packages for SLS tablet appliance (Ubuntu/Lubuntu x86_64)
 # Refresh offline cache: scripts/10-fetch-offline.sh
 #
+# This file lists SEED packages only. 10-fetch-offline.sh also downloads
+# transitive hard Depends/PreDepends into vendor/debs/ (FETCH_DEPS=1 default)
+# so install-appliance.sh can dpkg -i without apt -f / network.
+#
 # Note: Ubuntu 24.04+ uses t64 transition names (libfreenect0.5t64).
 # Older releases may use libfreenect0.5 — fetch script resolves both.
 

@@ -46,33 +46,147 @@ resolve_pkg() {
   return 1
 }
 
-# --- apt debs ---
+# Expand seed packages to hard Depends/PreDepends (transitive).
+# Uses apt-cache depends --recurse; keeps only real packages (apt-cache show).
+expand_apt_deps() {
+  local -a seeds=("$@")
+  local line name
+  if [[ ${#seeds[@]} -eq 0 ]]; then
+    return 0
+  fi
+  # Output format: bare package name on its own line; field lines are indented.
+  # Example:
+  #   freenect
+  #     Depends: libfreenect-bin
+  #   libfreenect-bin
+  #     Depends: libglut3.12
+  {
+    printf '%s\n' "${seeds[@]}"
+    apt-cache depends --recurse \
+      --no-recommends --no-suggests \
+      --no-conflicts --no-breaks --no-replaces --no-enhances \
+      "${seeds[@]}" 2>/dev/null || true
+  } | while IFS= read -r line; do
+    # skip indented field lines and empty
+    [[ -z "$line" || "$line" != "${line#"${line%%[![:space:]]*}"}" ]] && continue
+    # also skip "package" lines that look like "Depends: ..."
+    [[ "$line" == *":"* && "$line" != *":amd64" && "$line" != *":i386" ]] && continue
+    name="${line%%:*}"
+    name="${name// /}"
+    [[ -z "$name" ]] && continue
+    if apt-cache show "$name" >/dev/null 2>&1; then
+      echo "$name"
+    fi
+  done | sort -u
+}
+
+# --- apt debs (seeds + recursive hard deps for true offline dpkg -i) ---
+# Set FETCH_DEPS=0 to download only packages/apt-packages.txt seeds (old behavior).
+FETCH_DEPS="${FETCH_DEPS:-1}"
 if command -v apt-get >/dev/null 2>&1; then
   mapfile -t RAW < <(grep -vE '^\s*(#|$)' packages/apt-packages.txt || true)
-  PKGS=()
+  SEEDS=()
   for p in "${RAW[@]}"; do
     if rp="$(resolve_pkg "$p")"; then
       if [[ "$rp" != "$p" ]]; then
         echo "  resolve: $p → $rp"
       fi
-      PKGS+=("$rp")
+      SEEDS+=("$rp")
     else
       echo "  skip (no candidate): $p"
     fi
   done
+  PKGS=("${SEEDS[@]}")
+  if [[ "$FETCH_DEPS" != "0" && ${#SEEDS[@]} -gt 0 ]]; then
+    echo "Expanding hard dependencies for ${#SEEDS[@]} seed packages…"
+    mapfile -t PKGS < <(expand_apt_deps "${SEEDS[@]}")
+    echo "  → ${#PKGS[@]} before conflict filter"
+    # apt-cache --recurse includes BOTH sides of OR alternatives (e.g. libjack0 |
+    # libjack-jackd2-0, libavcodec vs libavcodec-extra). Drop the losers so a
+    # blanket dpkg -i vendor/debs/*.deb does not conflict.
+    mapfile -t PKGS < <(
+      printf '%s\n' "${PKGS[@]}" | grep -Ev \
+        '^(libavcodec-extra|libavfilter-extra|libavformat-extra|libavutil-extra)' \
+        | grep -Ev '^libjack0$' \
+        | grep -Ev -- '-extra[0-9]*$' \
+        || true
+    )
+    echo "  → ${#PKGS[@]} after dropping OR-conflict alternatives"
+  fi
   if [[ ${#PKGS[@]} -gt 0 ]]; then
     echo "Downloading ${#PKGS[@]} debs into vendor/debs …"
     ok=0
     fail=0
-    for p in "${PKGS[@]}"; do
-      if (cd "$DEBS" && apt-get download "$p"); then
-        ok=$((ok + 1))
+    # Batch download (apt-get download accepts many names)
+    # Split into chunks to avoid argv limits
+    chunk=()
+    flush_chunk() {
+      if [[ ${#chunk[@]} -eq 0 ]]; then
+        return 0
+      fi
+      if (cd "$DEBS" && apt-get download "${chunk[@]}"); then
+        ok=$((ok + ${#chunk[@]}))
       else
-        echo "  FAIL deb: $p"
-        fail=$((fail + 1))
+        # fall back one-by-one so one missing name does not abort the rest
+        for p in "${chunk[@]}"; do
+          if (cd "$DEBS" && apt-get download "$p"); then
+            ok=$((ok + 1))
+          else
+            echo "  FAIL deb: $p"
+            fail=$((fail + 1))
+          fi
+        done
+      fi
+      chunk=()
+    }
+    for p in "${PKGS[@]}"; do
+      chunk+=("$p")
+      if [[ ${#chunk[@]} -ge 40 ]]; then
+        flush_chunk
       fi
     done
-    echo "Debs: $ok downloaded, $fail failed, total files=$(find "$DEBS" -name '*.deb' | wc -l)"
+    flush_chunk
+    # Drop any leftover conflict debs from older fetches
+    (cd "$DEBS" && rm -f \
+      libavcodec-extra*.deb libavfilter-extra*.deb libavformat-extra*.deb \
+      libavutil-extra*.deb libjack0_*.deb 2>/dev/null || true)
+    # Persist expanded name list for audit / re-fetch
+    printf '%s\n' "${PKGS[@]}" >"$ROOT/vendor/debs/PACKAGE-LIST.txt"
+    # Packages index for install-appliance local apt pool (file://vendor/debs)
+    if command -v dpkg-scanpackages >/dev/null 2>&1; then
+      echo "Writing vendor/debs/Packages index…"
+      (cd "$DEBS" && dpkg-scanpackages . /dev/null >Packages) || true
+      gzip -kf "$DEBS/Packages" 2>/dev/null || true
+    else
+      echo "NOTE: install dpkg-dev for dpkg-scanpackages (better offline apt index)."
+      echo "  Generating Packages with dpkg-deb fields…"
+      : >"$DEBS/Packages"
+      for deb in "$DEBS"/*.deb; do
+        {
+          echo "Package: $(dpkg-deb -f "$deb" Package)"
+          echo "Version: $(dpkg-deb -f "$deb" Version)"
+          echo "Architecture: $(dpkg-deb -f "$deb" Architecture)"
+          dep=$(dpkg-deb -f "$deb" Depends || true)
+          [[ -n "$dep" ]] && echo "Depends: $dep"
+          pre=$(dpkg-deb -f "$deb" Pre-Depends || true)
+          [[ -n "$pre" ]] && echo "Pre-Depends: $pre"
+          prov=$(dpkg-deb -f "$deb" Provides || true)
+          [[ -n "$prov" ]] && echo "Provides: $prov"
+          conf=$(dpkg-deb -f "$deb" Conflicts || true)
+          [[ -n "$conf" ]] && echo "Conflicts: $conf"
+          rep=$(dpkg-deb -f "$deb" Replaces || true)
+          [[ -n "$rep" ]] && echo "Replaces: $rep"
+          echo "Filename: ./$(basename "$deb")"
+          echo "Size: $(stat -c%s "$deb")"
+          echo "MD5sum: $(md5sum "$deb" | awk '{print $1}')"
+          echo "SHA256: $(sha256sum "$deb" | awk '{print $1}')"
+          echo
+        } >>"$DEBS/Packages"
+      done
+      gzip -kf "$DEBS/Packages" 2>/dev/null || true
+    fi
+    echo "Debs: ok≈$ok fail=$fail files=$(find "$DEBS" -name '*.deb' | wc -l)"
+    echo "  list: vendor/debs/PACKAGE-LIST.txt"
   fi
 else
   echo "SKIP debs: no apt-get"

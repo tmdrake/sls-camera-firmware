@@ -50,15 +50,80 @@ else
 fi
 
 # --- debs ---
+mapfile -t SEED_PKGS < <(grep -vE '^\s*(#|$)' "$ROOT/packages/apt-packages.txt" || true)
+# Resolve t64 renames for seed list (best-effort)
+resolve_seed() {
+  local p="$1"
+  if apt-cache show "$p" >/dev/null 2>&1; then
+    echo "$p"
+  elif [[ "$p" == "libfreenect0.5t64" ]] && apt-cache show libfreenect0.5 >/dev/null 2>&1; then
+    echo "libfreenect0.5"
+  elif [[ "$p" == "libfreenect0.5" ]] && apt-cache show libfreenect0.5t64 >/dev/null 2>&1; then
+    echo "libfreenect0.5t64"
+  else
+    echo "$p"
+  fi
+}
+PKGS=()
+for p in "${SEED_PKGS[@]}"; do
+  PKGS+=("$(resolve_seed "$p")")
+done
+
 if compgen -G "$ROOT/vendor/debs/*.deb" >/dev/null 2>&1; then
-  echo "Installing offline debs…"
-  dpkg -i "$ROOT"/vendor/debs/*.deb || apt-get -f install -y
+  n_debs=$(find "$ROOT/vendor/debs" -name '*.deb' | wc -l)
+  echo "Installing seeds using offline deb cache ($n_debs files in vendor/debs)…"
+  # Prefer apt's archive cache + --no-download so:
+  #  - already-installed packages (python3, etc.) are left alone
+  #  - only missing seeds/deps are installed
+  #  - OR-alternatives are chosen by apt (no dpkg -i *.deb conflicts)
+  ARCHIVES=/var/cache/apt/archives
+  mkdir -p "$ARCHIVES"
+  # Copy without clobbering identical files; ignore Permission errors on partial
+  cp -n "$ROOT"/vendor/debs/*.deb "$ARCHIVES/" 2>/dev/null || \
+    cp "$ROOT"/vendor/debs/*.deb "$ARCHIVES/" 2>/dev/null || true
+
+  set +e
+  if [[ ${#PKGS[@]} -gt 0 ]]; then
+    if [[ "${SLS_OFFLINE:-0}" == "1" ]]; then
+      apt-get install -y --no-install-recommends --no-download "${PKGS[@]}"
+      apt_rc=$?
+    else
+      # Try fully offline first; if deps missing from cache, allow network fill
+      apt-get install -y --no-install-recommends --no-download "${PKGS[@]}"
+      apt_rc=$?
+      if [[ "$apt_rc" -ne 0 ]]; then
+        echo "WARN: --no-download incomplete; retrying with network allowed…"
+        apt-get update || true
+        apt-get install -y --no-install-recommends "${PKGS[@]}"
+        apt_rc=$?
+      fi
+    fi
+  else
+    apt_rc=0
+  fi
+  set -e
+
+  if [[ "${apt_rc:-1}" -ne 0 ]]; then
+    if [[ "${SLS_OFFLINE:-0}" == "1" ]]; then
+      echo "ERROR: offline apt install failed (SLS_OFFLINE=1)." >&2
+      echo "  Re-run scripts/10-fetch-offline.sh (FETCH_DEPS=1) on matching Ubuntu." >&2
+      exit 1
+    fi
+    echo "WARN: cache install failed — last resort dpkg -i selected seeds only…"
+    # Install only seed .debs by name match, not every recursive deb
+    for p in "${PKGS[@]}"; do
+      match=$(ls "$ROOT"/vendor/debs/"${p}"_*.deb 2>/dev/null | head -1 || true)
+      if [[ -n "$match" ]]; then
+        dpkg -i "$match" || true
+      fi
+    done
+    apt-get -f install -y || true
+  fi
 else
-  echo "No vendor/debs — installing from apt (online)…"
-  mapfile -t PKGS < <(grep -vE '^\s*(#|$)' "$ROOT/packages/apt-packages.txt" || true)
+  echo "No vendor/debs — installing seeds from apt (online)…"
   if [[ ${#PKGS[@]} -gt 0 ]]; then
     apt-get update
-    apt-get install -y "${PKGS[@]}" || true
+    apt-get install -y --no-install-recommends "${PKGS[@]}" || true
   fi
 fi
 
@@ -94,15 +159,22 @@ echo "Creating venv…"
 python3 -m venv "$VIEWER/.venv"
 # shellcheck disable=SC1091
 source "$VIEWER/.venv/bin/activate"
-pip install --upgrade pip
 if compgen -G "$ROOT/vendor/wheels/*" >/dev/null 2>&1; then
+  # Fully offline: never hit PyPI when wheels are vendored
+  pip install --no-index --find-links="$ROOT/vendor/wheels" --upgrade pip 2>/dev/null || true
   pip install --no-index --find-links="$ROOT/vendor/wheels" -r "$VIEWER/requirements.txt" \
     || pip install --no-index --find-links="$ROOT/vendor/wheels" -r "$ROOT/packages/python-requirements.txt"
+  pip install --no-index --find-links="$ROOT/vendor/wheels" \
+    'sounddevice>=0.5' 'imageio-ffmpeg>=0.5' 2>/dev/null || true
 else
+  if [[ "${SLS_OFFLINE:-0}" == "1" ]]; then
+    echo "ERROR: no vendor/wheels and SLS_OFFLINE=1" >&2
+    exit 1
+  fi
+  pip install --upgrade pip
   pip install -r "$VIEWER/requirements.txt"
+  pip install 'sounddevice>=0.5' 'imageio-ffmpeg>=0.5' 2>/dev/null || true
 fi
-# ensure extras
-pip install 'sounddevice>=0.5' 'imageio-ffmpeg>=0.5' 2>/dev/null || true
 deactivate
 chown -R "$SLS_USER:$SLS_USER" "$VIEWER/.venv" 2>/dev/null || true
 

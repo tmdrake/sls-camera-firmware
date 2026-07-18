@@ -10,10 +10,37 @@ Large binaries are **not** stored in git. Regenerate on a connected build host:
 
 | Path | Contents |
 |------|----------|
-| `vendor/debs/` | `.deb` files from `packages/apt-packages.txt` |
+| `vendor/debs/` | `.deb` files: **seeds** from `packages/apt-packages.txt` **plus recursive hard deps** |
+| `vendor/debs/PACKAGE-LIST.txt` | Expanded package names from last fetch (audit) |
 | `vendor/wheels/` | Python wheels for `packages/python-requirements.txt` |
 | `vendor/models/` | MediaPipe pose landmarker `.task` |
 | `vendor/sls-camera/` | Optional full app tree from `20-sync-app.sh` |
+
+### Deb fetch behavior
+
+```bash
+./scripts/10-fetch-offline.sh          # seeds + Depends/PreDepends (default)
+FETCH_DEPS=0 ./scripts/10-fetch-offline.sh   # seeds only (incomplete offline)
+```
+
+Phase 1 on a clean Lubuntu VM showed that seed-only debs left packages unconfigured
+(`libjack`, `libavdevice`, `python3-venv` deps, …) until `apt-get -f install` ran online.
+Always re-fetch with `FETCH_DEPS=1` before freezing a field pack.
+
+The expander drops **OR-alternative losers** (e.g. `libavcodec-extra*`, `libjack0`).
+`install-appliance.sh` does **not** `dpkg -i *.deb` (that fights alternatives). It copies
+debs into `/var/cache/apt/archives/` and runs:
+
+```bash
+apt-get install -y --no-install-recommends --no-download <seeds>
+```
+
+Set `SLS_OFFLINE=1` to refuse network fallback if the cache is incomplete.
+
+### Typical pack size
+
+After recursive fetch on Ubuntu 26.04: on the order of **~350 debs / ~240 MB**
+plus wheels + model (total firmware tree often ~700 MB+).
 
 ## Why offline
 

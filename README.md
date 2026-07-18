@@ -28,10 +28,14 @@ The **application source of truth** remains **`sls-camera`**. This repo is packa
 
 | Phase | Deliverable | Status |
 |-------|-------------|--------|
-| **0** | Repo scaffold, docs, offline fetch + app sync scripts | **In progress** |
-| **1** | `install-appliance.sh` on a blank Ubuntu/Lubuntu install (offline) | Next |
+| **0** | Repo scaffold, docs, offline fetch + app sync scripts | **Done** (recursive offline debs) |
+| **1** | `install-appliance.sh` on a blank Ubuntu/Lubuntu install (offline) | **Proven on Lubuntu 26.04 VM** (`--demo` smoke) |
 | **2** | Bootable **ISO** (live-build / Cubic / mkosi) | Later |
 | **3** | Read-only root + `/data`, power policy, factory reset | Later |
+
+### Screenshots (Phase 1 VM)
+
+See [docs/FIRST-BOOT.md](docs/FIRST-BOOT.md) and [docs/images/](docs/images/README.md) — Lubuntu desktop + SLS `--demo` UI.
 
 ## Quick start (build host)
 
