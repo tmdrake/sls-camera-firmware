@@ -85,19 +85,24 @@ sls-camera-firmware/
 
 See [docs/OFFLINE-MIRROR.md](docs/OFFLINE-MIRROR.md).
 
+**Start here (app + FW shared rules):**  
+[FOR-FIRMWARE-TEAM.md](https://github.com/tmdrake/sls-camera/blob/main/software/linux/docs/FOR-FIRMWARE-TEAM.md)  
+— golden rules, `install-apt-deps.sh`, smoke checklist, quit exit codes.
+
 **Dependency & version-conflict tracking** lives on the app repo (not only here):
 
-- [sls-camera#2](https://github.com/tmdrake/sls-camera/issues/2) — offline recursive deps / installer  
-- [sls-camera#3](https://github.com/tmdrake/sls-camera/issues/3) — apt/Python conflicts  
+- [sls-camera#2](https://github.com/tmdrake/sls-camera/issues/2) — offline recursive deps / installer (**closed**; use `install-apt-deps.sh`)  
+- [sls-camera#3](https://github.com/tmdrake/sls-camera/issues/3) — apt/Python conflicts (**open tracker**)  
 
 **Do not** commit Microsoft Kinect **UAC audio firmware** (non-redistributable). Document private drop or operator `kinect-audio-setup` install separately.
 
 ## Captures
 
-Appliance default: **`/data/sls-captures`**. Launcher sets `SLS_CAPTURES_DIR` when that directory exists. App support for the env var may be added in `sls-camera`; until then path is prepared for firmware.
+Appliance default: **`/data/sls-captures`**. Launcher sets `SLS_CAPTURES_DIR` when that directory exists. The app **honors** `SLS_CAPTURES_DIR` for the local captures root.
 
 ## Related app docs
 
+- [FOR-FIRMWARE-TEAM.md](https://github.com/tmdrake/sls-camera/blob/main/software/linux/docs/FOR-FIRMWARE-TEAM.md) (offline apt + contracts)  
 - [FIELD-INSTALL.md](https://github.com/tmdrake/sls-camera/blob/main/software/linux/docs/FIELD-INSTALL.md) (dev host packaging)  
 - [PRODUCT-VISION.md](https://github.com/tmdrake/sls-camera/blob/main/docs/PRODUCT-VISION.md)  
 - [UBUNTU-SETUP.md](https://github.com/tmdrake/sls-camera/blob/main/software/linux/docs/UBUNTU-SETUP.md)  
