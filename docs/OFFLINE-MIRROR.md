@@ -4,12 +4,32 @@
 
 **Track apt/Python dependency gaps and package version conflicts on the app repo**, not only here:
 
-| Topic | GitHub issue |
-|-------|----------------|
-| Offline recursive deps + cache install | [sls-camera#2](https://github.com/tmdrake/sls-camera/issues/2) |
-| Version / OR-alternative conflicts (and new ones) | [sls-camera#3](https://github.com/tmdrake/sls-camera/issues/3) |
+| Topic | GitHub issue | Status |
+|-------|----------------|--------|
+| Offline recursive deps + cache install | [sls-camera#2](https://github.com/tmdrake/sls-camera/issues/2) | **Closed** — app has `install-apt-deps.sh` (same rules as below) |
+| Version / OR-alternative conflicts (and new ones) | [sls-camera#3](https://github.com/tmdrake/sls-camera/issues/3) | **Open tracker** — comment new finds |
 
 Firmware implements fetch/install scripts; product decisions and installer docs close on **`tmdrake/sls-camera`**. Comment on those issues when a tablet or ISO hits a new conflict.
+
+### App-side handoff (read before field pack day)
+
+**One-pager in the app repo:**  
+[`sls-camera/software/linux/docs/FOR-FIRMWARE-TEAM.md`](https://github.com/tmdrake/sls-camera/blob/main/software/linux/docs/FOR-FIRMWARE-TEAM.md)
+
+Same install rules as this document, plus:
+
+```bash
+# Prove the app installer against this firmware cache
+cd ~/sls-camera
+./software/linux/scripts/install-apt-deps.sh \
+  --deb-cache ~/sls-camera-firmware/vendor/debs
+
+SLS_OFFLINE=1 ./software/linux/scripts/install-apt-deps.sh \
+  --deb-cache ~/sls-camera-firmware/vendor/debs
+```
+
+Seed list source of truth for the **app** (keep aligned):  
+`sls-camera/software/linux/packages/apt-packages.txt` (includes `espeak-ng` for DrakeVox).
 
 ---
 
