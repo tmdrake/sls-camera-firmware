@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+# Firmware-installed launcher for SLS Camera
+set -euo pipefail
+export PATH="${HOME}/.local/bin:/usr/local/bin:${PATH}"
+# Writable captures on appliance data volume when present
+if [[ -d /data/sls-captures ]]; then
+  export SLS_CAPTURES_DIR=/data/sls-captures
+fi
+APP_ROOT="${SLS_APP_ROOT:-/opt/sls-camera}"
+VIEWER="${APP_ROOT}/software/linux/viewer"
+if [[ ! -x "${VIEWER}/run.sh" ]]; then
+  echo "SLS Camera not installed at ${VIEWER}" >&2
+  exit 1
+fi
+cd "${VIEWER}"
+exec ./run.sh "$@"

@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=SLS Camera
+Comment=SLS field app (fullscreen)
+Exec=/usr/local/bin/sls-camera
+Terminal=false
+X-GNOME-Autostart-enabled=true
+X-SLS-Camera-Firmware=1

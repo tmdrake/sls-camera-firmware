@@ -1,0 +1,2 @@
+# Pinned sls-camera commit for firmware builds (update with scripts/20-sync-app.sh)
+0348fa05f8333e43a30aac421fcdcd28e74247ab

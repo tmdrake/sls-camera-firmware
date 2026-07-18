@@ -1,0 +1,12 @@
+SLS Camera Firmware packaging
+Copyright (c) 2026 SLS Camera contributors
+
+The scripts and documentation in this repository are provided for building
+appliance images for the SLS Camera project.
+
+Application source code is maintained in the separate "sls-camera" repository
+and remains under that project's license terms.
+
+Third-party packages (Ubuntu, PyPI, MediaPipe models, etc.) retain their own
+licenses. Do not redistribute non-redistributable firmware (e.g. Microsoft
+Kinect UAC audio firmware) via this repository.

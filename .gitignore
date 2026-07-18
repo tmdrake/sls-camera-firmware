@@ -1,0 +1,22 @@
+# Build artifacts
+build/
+out/
+*.iso
+*.img
+*.img.xz
+
+# Offline vendor cache (large; regenerate with scripts/10-fetch-offline.sh)
+vendor/debs/
+vendor/wheels/
+vendor/models/
+vendor/sls-camera/
+vendor/*.tgz
+vendor/*.tar.*
+!vendor/README.md
+!vendor/.gitkeep
+
+# Local overrides
+.env
+*.local
+__pycache__/
+.venv/
