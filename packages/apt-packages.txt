@@ -1,8 +1,12 @@
 # System packages for SLS tablet appliance (Ubuntu/Lubuntu x86_64)
 # Refresh offline cache: scripts/10-fetch-offline.sh
+#
+# Note: Ubuntu 24.04+ uses t64 transition names (libfreenect0.5t64).
+# Older releases may use libfreenect0.5 — fetch script resolves both.
+
 freenect
 libfreenect-bin
-libfreenect0.5
+libfreenect0.5t64
 libfreenect-dev
 libportaudio2
 alsa-utils
@@ -21,9 +25,5 @@ curl
 ca-certificates
 usbutils
 v4l-utils
-# Optional: host ffmpeg if not relying only on imageio-ffmpeg
+# Optional host ffmpeg (app also vendors imageio-ffmpeg wheel)
 ffmpeg
-# Touch / light desktop pieces (Phase 2 ISO will expand)
-# xserver-xorg
-# lightdm
-# openbox
