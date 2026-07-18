@@ -25,24 +25,30 @@ Without a Kinect (VM smoke test), run:
 /usr/local/bin/sls-camera --demo
 ```
 
-### Quit → power off (appliance)
+### Quit / power off (respects app request)
 
-The firmware launcher `/usr/local/bin/sls-camera` defaults to **shutting down the machine** when the operator confirms Quit (button / Q / window close). That keeps a field tablet from dropping to a bare desktop.
+The launcher **`/usr/local/bin/sls-camera`** prefers the **app’s exit code** (product contract for [sls-camera#4](https://github.com/tmdrake/sls-camera/issues/4)):
 
-| `SLS_ON_QUIT` | Behavior |
-|---------------|----------|
-| `shutdown` (default) | Power off after app exits |
-| `restart` | Relaunch the app (kiosk loop) |
-| `none` | Exit to desktop only |
+| Exit code | Meaning | Launcher action |
+|-----------|---------|-----------------|
+| **0** | Clean quit | See `SLS_QUIT_FALLBACK` (appliance default: **power off** until the app sends `10`) |
+| **10** | Operator requested **host power-off** | Power off |
+| **11** | Relaunch app | Restart launcher |
+| other | Error / crash | Exit (no power off); optional `SLS_QUIT_ON_ERROR=restart` |
+
+| Env | Values | Role |
+|-----|--------|------|
+| `SLS_ON_QUIT` | `app` (default), `shutdown`, `restart`, `none` | `app` = honor codes; `shutdown` = any exit powers off (legacy) |
+| `SLS_QUIT_FALLBACK` | `shutdown` (default on appliance), `none`, `restart` | Used when exit is **0** under `SLS_ON_QUIT=app` |
 
 Examples:
 
 ```bash
-# temporary: quit stays on desktop
-SLS_ON_QUIT=none /usr/local/bin/sls-camera
+# Lab: Quit returns to desktop (even while app still exits 0)
+SLS_ON_QUIT=app SLS_QUIT_FALLBACK=none /usr/local/bin/sls-camera
 
-# permanent for a session user: put in ~/.config/environment.d/sls.conf or autostart
-# SLS_ON_QUIT=restart
+# After sls-camera implements exit 10 on “Power off”:
+#   SLS_ON_QUIT=app SLS_QUIT_FALLBACK=none   # only power off when app asks
 ```
 
 Lab VM credentials: **`sls` / `20260717`** — see [VM-REBUILD.md](VM-REBUILD.md).

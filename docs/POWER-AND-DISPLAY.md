@@ -78,11 +78,18 @@ IdleAction=ignore
 
 App-side **inhibit suspend while running** remains Phase 3 product work (`sls-camera` backlog).
 
-### Quit → power off
+### Quit → power off (app-driven)
 
-Firmware launcher (`overlay/usr/local/bin/sls-camera`) sets **`SLS_ON_QUIT=shutdown`** by default: after the operator confirms **Quit** in the app, the host powers off (`loginctl poweroff` / `systemctl poweroff` / passwordless `sudo poweroff` via `etc/sudoers.d/sls-poweroff`).
+Firmware launcher (`overlay/usr/local/bin/sls-camera`) **respects app exit codes** ([sls-camera#4](https://github.com/tmdrake/sls-camera/issues/4)):
 
-Use `SLS_ON_QUIT=none` on a lab VM if you want Quit to return to the desktop without powering off.
+| Code | App intent | Launcher |
+|------|------------|----------|
+| `10` | Power off host | `loginctl` / `systemctl` / `sudo poweroff` (`etc/sudoers.d/sls-poweroff`) |
+| `11` | Relaunch | re-exec launcher |
+| `0` | Clean quit | `SLS_QUIT_FALLBACK` (appliance default `shutdown` until app emits `10`) |
+
+Defaults: `SLS_ON_QUIT=app`, `SLS_QUIT_FALLBACK=shutdown`.  
+Lab without poweroff: `SLS_QUIT_FALLBACK=none`.
 
 ## Brightness ownership
 

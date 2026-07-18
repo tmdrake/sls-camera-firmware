@@ -1,5 +1,14 @@
 #!/usr/bin/env bash
 # Firmware-installed launcher for SLS Camera (appliance / tablet)
+#
+# Respects the *app's* quit intent via process exit codes (sls-camera#4):
+#   0  — clean quit (return to session / desktop)
+#   10 — operator requested host power-off
+#   11 — relaunch app (kiosk)
+#
+# Until the app emits those codes, set SLS_ON_QUIT=shutdown for legacy
+# “any exit → poweroff” behavior, or SLS_QUIT_FALLBACK=shutdown with
+# SLS_ON_QUIT=app (default) so exit 0 still powers off on current builds.
 set -euo pipefail
 export PATH="${HOME}/.local/bin:/usr/local/bin:${PATH}"
 
@@ -15,20 +24,21 @@ if [[ ! -x "${VIEWER}/run.sh" ]]; then
   exit 1
 fi
 
-# After the operator quits the app (Quit / Q / window close):
-#   shutdown  — power off the machine (default on appliance images)
-#   restart   — launch the app again (kiosk loop; useful if crash-prone)
-#   none      — exit the launcher only (desktop stays up)
-SLS_ON_QUIT="${SLS_ON_QUIT:-shutdown}"
+# Exit-code contract (keep in sync with sls-camera issue #4 / viewer docs)
+readonly SLS_EXIT_OK=0
+readonly SLS_EXIT_POWEROFF=10
+readonly SLS_EXIT_RELAUNCH=11
 
-cd "${VIEWER}"
-set +e
-./run.sh "$@"
-code=$?
-set -e
+# How to interpret app exit:
+#   app       — honor exit codes 10/11; exit 0 → SLS_QUIT_FALLBACK (default shutdown on appliance)
+#   shutdown  — any exit → power off (legacy, ignore codes except we still run cleanup path)
+#   restart   — any exit → relaunch
+#   none      — any exit → return to desktop
+SLS_ON_QUIT="${SLS_ON_QUIT:-app}"
+# When SLS_ON_QUIT=app and exit code is 0 (today's app always does this on Quit):
+SLS_QUIT_FALLBACK="${SLS_QUIT_FALLBACK:-shutdown}"
 
 _power_off() {
-  # Prefer user session poweroff; fall back to systemctl / sudo (see sudoers drop-in)
   if command -v loginctl >/dev/null 2>&1; then
     loginctl poweroff 2>/dev/null && return 0
   fi
@@ -41,22 +51,73 @@ _power_off() {
   /sbin/poweroff 2>/dev/null || /usr/sbin/poweroff 2>/dev/null || true
 }
 
+_relaunch() {
+  echo "SLS Camera: relaunching…"
+  sleep 1
+  exec /usr/local/bin/sls-camera "$@"
+}
+
+cd "${VIEWER}"
+set +e
+./run.sh "$@"
+code=$?
+set -e
+
+echo "SLS Camera exited with code ${code} (SLS_ON_QUIT=${SLS_ON_QUIT})"
+
 case "${SLS_ON_QUIT}" in
+  app|respect|codes)
+    case "${code}" in
+      "${SLS_EXIT_POWEROFF}")
+        echo "App requested power-off (exit ${SLS_EXIT_POWEROFF})"
+        _power_off
+        ;;
+      "${SLS_EXIT_RELAUNCH}")
+        echo "App requested relaunch (exit ${SLS_EXIT_RELAUNCH})"
+        _relaunch "$@"
+        ;;
+      "${SLS_EXIT_OK}")
+        # App clean quit — honor fallback until viewer implements #4 fully
+        case "${SLS_QUIT_FALLBACK}" in
+          shutdown|poweroff|off)
+            echo "Clean quit (0); SLS_QUIT_FALLBACK=${SLS_QUIT_FALLBACK} → power off"
+            _power_off
+            ;;
+          restart|loop|relaunch)
+            _relaunch "$@"
+            ;;
+          none|exit|desktop|"")
+            exit 0
+            ;;
+          *)
+            echo "Unknown SLS_QUIT_FALLBACK=${SLS_QUIT_FALLBACK}" >&2
+            exit 0
+            ;;
+        esac
+        ;;
+      *)
+        # Crash / error: do not power off; optional relaunch
+        if [[ "${SLS_QUIT_ON_ERROR:-none}" == "restart" ]]; then
+          _relaunch "$@"
+        fi
+        exit "${code}"
+        ;;
+    esac
+    exit "${code}"
+    ;;
   shutdown|poweroff|off)
-    echo "SLS Camera exited (code ${code}); powering off (SLS_ON_QUIT=${SLS_ON_QUIT})…"
+    echo "Legacy SLS_ON_QUIT=shutdown → power off"
     _power_off
     exit "${code}"
     ;;
   restart|loop|relaunch)
-    echo "SLS Camera exited (code ${code}); relaunching…"
-    sleep 1
-    exec /usr/local/bin/sls-camera "$@"
+    _relaunch "$@"
     ;;
   none|exit|desktop)
     exit "${code}"
     ;;
   *)
-    echo "Unknown SLS_ON_QUIT=${SLS_ON_QUIT}; exiting without poweroff" >&2
+    echo "Unknown SLS_ON_QUIT=${SLS_ON_QUIT}; exiting" >&2
     exit "${code}"
     ;;
 esac
