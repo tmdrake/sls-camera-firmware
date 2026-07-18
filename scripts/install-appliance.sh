@@ -137,6 +137,14 @@ if lsmod 2>/dev/null | grep -q '^gspca_kinect'; then
   modprobe -r gspca_kinect 2>/dev/null || echo "WARN: could not unload gspca_kinect"
 fi
 
+# --- no suspend / lid sleep (appliance field use) ---
+if [[ -f "$OVERLAY/etc/systemd/logind.conf.d/50-sls-no-suspend.conf" ]]; then
+  install -D -m 644 "$OVERLAY/etc/systemd/logind.conf.d/50-sls-no-suspend.conf" \
+    /etc/systemd/logind.conf.d/50-sls-no-suspend.conf
+  systemctl restart systemd-logind 2>/dev/null || true
+  echo "Installed logind no-suspend policy (see docs/POWER-AND-DISPLAY.md)"
+fi
+
 # --- app tree ---
 echo "Installing app → $APP_ROOT"
 mkdir -p "$APP_ROOT"
