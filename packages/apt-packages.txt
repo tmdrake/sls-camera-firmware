@@ -14,6 +14,8 @@ libfreenect0.5t64
 libfreenect-dev
 libportaudio2
 alsa-utils
+# DrakeVox / TTS (keep in sync with sls-camera software/linux/packages/apt-packages.txt)
+espeak-ng
 python3
 python3-venv
 python3-pip

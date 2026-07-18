@@ -1,2 +1,3 @@
 # Pinned sls-camera commit for firmware builds (update with scripts/20-sync-app.sh)
-0348fa05f8333e43a30aac421fcdcd28e74247ab
+# 59ebee6 — firmware handoff: #2 offline apt, #4 quit exit 10, #5 captures Auto/SD
+59ebee6d970b969bdb8f78a98f25a64b975c21aa

@@ -6,8 +6,10 @@
 #   10 — operator requested host power-off
 #   11 — relaunch app (kiosk)
 #
-# Defaults (appliance): SLS_ON_QUIT=app, SLS_QUIT_FALLBACK=shutdown
-# so exit 0 still powers off until the app emits 10.
+# Defaults (appliance, post sls-camera#4):
+#   SLS_QUIT_ACTION=shutdown  — app shows "Power off?" and exits 10
+#   SLS_ON_QUIT=app           — honor exit codes
+#   SLS_QUIT_FALLBACK=none    — exit 0 does NOT power off (app must send 10)
 set -u
 export PATH="${HOME}/.local/bin:/usr/local/bin:${PATH}"
 
@@ -26,6 +28,9 @@ if [[ -d /data/sls-captures ]]; then
   export SLS_CAPTURES_DIR=/data/sls-captures
 fi
 
+# Force appliance quit mode in the app (Settings "Power off on Quit" ON for process)
+export SLS_QUIT_ACTION="${SLS_QUIT_ACTION:-shutdown}"
+
 APP_ROOT="${SLS_APP_ROOT:-/opt/sls-camera}"
 VIEWER="${APP_ROOT}/software/linux/viewer"
 if [[ ! -x "${VIEWER}/run.sh" ]]; then
@@ -38,7 +43,7 @@ readonly SLS_EXIT_POWEROFF=10
 readonly SLS_EXIT_RELAUNCH=11
 
 SLS_ON_QUIT="${SLS_ON_QUIT:-app}"
-SLS_QUIT_FALLBACK="${SLS_QUIT_FALLBACK:-shutdown}"
+SLS_QUIT_FALLBACK="${SLS_QUIT_FALLBACK:-none}"
 
 _power_off() {
   _log "power-off requested (uid=$(id -u) user=$(id -un))"

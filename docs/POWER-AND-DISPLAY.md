@@ -88,8 +88,13 @@ Firmware launcher (`overlay/usr/local/bin/sls-camera`) **respects app exit codes
 | `11` | Relaunch | re-exec launcher |
 | `0` | Clean quit | `SLS_QUIT_FALLBACK` (appliance default `shutdown` until app emits `10`) |
 
-Defaults: `SLS_ON_QUIT=app`, `SLS_QUIT_FALLBACK=shutdown`.  
-Lab without poweroff: `SLS_QUIT_FALLBACK=none`.
+Defaults (post app pin **59ebee6** / sls-camera#4):
+
+- `SLS_QUIT_ACTION=shutdown` — app confirms “Power off?” and exits **10**
+- `SLS_ON_QUIT=app` — launcher honors exit codes  
+- `SLS_QUIT_FALLBACK=none` — exit **0** does not power off  
+
+Lab without poweroff: `SLS_QUIT_ACTION=exit /usr/local/bin/sls-camera`.
 
 ## Brightness ownership
 

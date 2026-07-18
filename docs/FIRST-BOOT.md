@@ -31,25 +31,19 @@ The launcher **`/usr/local/bin/sls-camera`** prefers the **app’s exit code** (
 
 | Exit code | Meaning | Launcher action |
 |-----------|---------|-----------------|
-| **0** | Clean quit | See `SLS_QUIT_FALLBACK` (appliance default: **power off** until the app sends `10`) |
+| **0** | Clean quit | `SLS_QUIT_FALLBACK` (appliance default **`none`** — stay up) |
 | **10** | Operator requested **host power-off** | Power off |
 | **11** | Relaunch app | Restart launcher |
 | other | Error / crash | Exit (no power off); optional `SLS_QUIT_ON_ERROR=restart` |
 
 | Env | Values | Role |
 |-----|--------|------|
-| `SLS_ON_QUIT` | `app` (default), `shutdown`, `restart`, `none` | `app` = honor codes; `shutdown` = any exit powers off (legacy) |
-| `SLS_QUIT_FALLBACK` | `shutdown` (default on appliance), `none`, `restart` | Used when exit is **0** under `SLS_ON_QUIT=app` |
+| `SLS_QUIT_ACTION` | `shutdown` (appliance default), `exit` | Forces app Power-off-on-Quit mode (sls-camera#4) |
+| `SLS_ON_QUIT` | `app` (default), `shutdown`, `restart`, `none` | How launcher reacts to exit codes |
+| `SLS_QUIT_FALLBACK` | `none` (default), `shutdown`, `restart` | Only if app still exits **0** on Quit |
 
-Examples:
-
-```bash
-# Lab: Quit returns to desktop (even while app still exits 0)
-SLS_ON_QUIT=app SLS_QUIT_FALLBACK=none /usr/local/bin/sls-camera
-
-# After sls-camera implements exit 10 on “Power off”:
-#   SLS_ON_QUIT=app SLS_QUIT_FALLBACK=none   # only power off when app asks
-```
+App pin: see `packages/app-ref.txt` (includes exit 10 + `SLS_CAPTURES_DIR`).  
+Firmware handoff: app repo `software/linux/docs/FOR-FIRMWARE-TEAM.md`.
 
 Lab VM credentials: **`sls` / `20260717`** — see [VM-REBUILD.md](VM-REBUILD.md).
 
