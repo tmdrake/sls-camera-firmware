@@ -1,5 +1,18 @@
 # Offline mirror (`vendor/`)
 
+## Issue tracking (dependencies & version conflicts)
+
+**Track apt/Python dependency gaps and package version conflicts on the app repo**, not only here:
+
+| Topic | GitHub issue |
+|-------|----------------|
+| Offline recursive deps + cache install | [sls-camera#2](https://github.com/tmdrake/sls-camera/issues/2) |
+| Version / OR-alternative conflicts (and new ones) | [sls-camera#3](https://github.com/tmdrake/sls-camera/issues/3) |
+
+Firmware implements fetch/install scripts; product decisions and installer docs close on **`tmdrake/sls-camera`**. Comment on those issues when a tablet or ISO hits a new conflict.
+
+---
+
 Large binaries are **not** stored in git. Regenerate on a connected build host:
 
 ```bash

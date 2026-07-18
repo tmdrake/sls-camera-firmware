@@ -79,6 +79,11 @@ sls-camera-firmware/
 
 See [docs/OFFLINE-MIRROR.md](docs/OFFLINE-MIRROR.md).
 
+**Dependency & version-conflict tracking** lives on the app repo (not only here):
+
+- [sls-camera#2](https://github.com/tmdrake/sls-camera/issues/2) — offline recursive deps / installer  
+- [sls-camera#3](https://github.com/tmdrake/sls-camera/issues/3) — apt/Python conflicts  
+
 **Do not** commit Microsoft Kinect **UAC audio firmware** (non-redistributable). Document private drop or operator `kinect-audio-setup` install separately.
 
 ## Captures

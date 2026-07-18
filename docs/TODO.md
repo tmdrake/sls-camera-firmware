@@ -1,5 +1,9 @@
 # Firmware TODO
 
+**Dependencies / version conflicts:** track on **`sls-camera`** issues  
+([#2 offline deps](https://github.com/tmdrake/sls-camera/issues/2),  
+[#3 version conflicts](https://github.com/tmdrake/sls-camera/issues/3)) — implement fixes here, close work there.
+
 ## Phase 0 — scaffold
 
 - [x] Repo layout, docs, package lists  
@@ -9,9 +13,11 @@
 
 ## Phase 1 — appliance install
 
-- [ ] Complete `install-appliance.sh` (users, debs, venv, autologin for LightDM **and** GDM)  
-- [ ] Wire captures path into app (`SLS_CAPTURES_DIR` in `sls-camera` if not present)  
-- [ ] Test on clean Lubuntu VM + real tablet  
+- [x] Recursive offline debs + apt `--no-download` install path (see sls-camera #2 / #3)  
+- [x] Test on clean Lubuntu 26.04 VM (`--demo` smoke + screenshots)  
+- [ ] Complete autologin for **SDDM** (Lubuntu 26.04) in addition to LightDM/GDM  
+- [ ] Wire captures path into app (`SLS_CAPTURES_DIR` in `sls-camera` if not present) — track in app repo  
+- [ ] Test on real tablet  
 - [ ] Optional: one-shot kinect-audio-setup doc only (no MS blobs)  
 
 ## Phase 2 — ISO
