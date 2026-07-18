@@ -37,6 +37,12 @@ The **application source of truth** remains **`sls-camera`**. This repo is packa
 
 See [docs/FIRST-BOOT.md](docs/FIRST-BOOT.md) and [docs/images/](docs/images/README.md) — Lubuntu desktop + SLS `--demo` UI.
 
+### Rebuild the test VM
+
+Step-by-step KVM rebuild (Lubuntu 26.04, user **`sls` / `20260717` lab password):
+
+→ **[docs/VM-REBUILD.md](docs/VM-REBUILD.md)**
+
 ## Quick start (build host)
 
 ```bash

@@ -48,6 +48,8 @@ APP_SRC=~/sls-camera ./scripts/20-sync-app.sh
 sudo ./scripts/install-appliance.sh
 ```
 
+For a **full KVM rebuild** (ISO → install → appliance → lab user **`sls` / `20260717`**), follow **[VM-REBUILD.md](VM-REBUILD.md)**.
+
 ### 5. ISO (Phase 2)
 
 ```bash

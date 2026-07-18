@@ -1,0 +1,259 @@
+# Rebuild Phase 1 test VM (Lubuntu 26.04)
+
+Use this when recreating the KVM appliance test guest from scratch.  
+Proven path: **Lubuntu 26.04 x86_64** + `install-appliance.sh` + optional Kinect USB passthrough.
+
+## Lab credentials (standard for rebuilds)
+
+| Role | Username | Password | Notes |
+|------|----------|----------|--------|
+| **Appliance user (use this)** | **`sls`** | **`20260717`** | Autologin target; app autostart; SSH as this user |
+| Lubuntu installer user | *any temporary name* | *any* | Only needed for first ISO install; **remove after appliance setup** |
+
+**Policy for rebuilds:** always finish with a single interactive user **`sls` / `20260717`**. Do not keep a long-lived “ghosthunter” (or other install) account — it leaves desktop scrap and breaks the “blow and go” story.
+
+> **Security:** `20260717` is a **lab / VM-only** password. Change it on real tablets and never reuse it as a production secret. Deps/version issues → [sls-camera#2](https://github.com/tmdrake/sls-camera/issues/2) / [#3](https://github.com/tmdrake/sls-camera/issues/3).
+
+### After `install-appliance.sh`
+
+The script creates **`sls`** if missing. Set/reset the lab password explicitly:
+
+```bash
+sudo passwd sls
+# enter: 20260717  (twice)
+# or non-interactive on a throwaway VM:
+echo 'sls:20260717' | sudo chpasswd
+```
+
+SSH from the build host (libvirt NAT example):
+
+```bash
+ssh sls@192.168.122.100
+# password: 20260717
+```
+
+Console:
+
+```bash
+virt-viewer -c qemu:///system -a sls-appliance-phase1
+```
+
+---
+
+## 1. Build host prep
+
+On the **host** (not the guest), from this repo:
+
+```bash
+cd ~/sls-camera-firmware
+./scripts/00-check-host.sh
+./scripts/10-fetch-offline.sh    # recursive debs + wheels + model
+./scripts/20-sync-app.sh         # pin from packages/app-ref.txt
+```
+
+ISO for the guest (download once; keep under `/var/lib/libvirt/images/` so QEMU can read it):
+
+```text
+https://cdimage.ubuntu.com/lubuntu/releases/26.04/release/lubuntu-26.04-desktop-amd64.iso
+```
+
+---
+
+## 2. Create the VM (virt-install)
+
+One-time storage pool if needed:
+
+```bash
+sudo virsh pool-define-as default dir --target /var/lib/libvirt/images
+sudo virsh pool-build default
+sudo virsh pool-start default
+sudo virsh pool-autostart default
+```
+
+```bash
+ISO=/var/lib/libvirt/images/lubuntu-26.04-desktop-amd64.iso
+virt-install \
+  --name sls-appliance-phase1 \
+  --memory 2048 \
+  --vcpus 2 \
+  --cpu host \
+  --disk size=30,format=qcow2,bus=virtio \
+  --cdrom "$ISO" \
+  --os-variant ubuntu24.04 \
+  --network network=default,model=virtio \
+  --graphics spice,listen=none \
+  --video virtio \
+  --channel spicevmc \
+  --boot uefi \
+  --noautoconsole
+
+virt-viewer -c qemu:///system -a sls-appliance-phase1
+```
+
+Suggested guest resources: **2 vCPU / 2 GiB RAM / 25–30 GiB disk**.
+
+---
+
+## 3. Lubuntu installer (inside the guest only)
+
+1. **Install Lubuntu** (not “Try only”).  
+2. Create a **temporary** admin user if the installer requires one (any name).  
+3. Finish install → reboot.  
+4. **Eject the ISO** so you boot the installed disk:
+
+```bash
+virsh -c qemu:///system change-media sls-appliance-phase1 sda --eject --config --live 2>/dev/null || true
+virt-xml sls-appliance-phase1 --edit --boot hd
+virsh -c qemu:///system reboot sls-appliance-phase1
+```
+
+5. Optional snapshot before appliance install:
+
+```bash
+virsh -c qemu:///system snapshot-create-as sls-appliance-phase1 pre-appliance \
+  "Clean Lubuntu before install-appliance"
+```
+
+---
+
+## 4. Copy firmware tree into the guest
+
+Guest must be on the network (default libvirt NAT). Find IP:
+
+```bash
+virsh -c qemu:///system domifaddr sls-appliance-phase1
+```
+
+From the **host** (example):
+
+```bash
+# as temporary install user, or after sls exists:
+scp -r ~/sls-camera-firmware USER@GUEST_IP:~/
+```
+
+Prefer placing the tree under **`/home/sls/sls-camera-firmware`** once `sls` exists.
+
+Enable SSH on the guest if needed:
+
+```bash
+sudo apt install -y openssh-server
+sudo systemctl enable --now ssh
+```
+
+---
+
+## 5. Run appliance install (on the guest)
+
+```bash
+cd ~/sls-camera-firmware   # or /home/sls/sls-camera-firmware
+sudo ./scripts/install-appliance.sh
+```
+
+This should:
+
+- Create/configure user **`sls`**
+- Install offline debs (apt cache + `--no-download` when vendor is complete)
+- Install app to `/opt/sls-camera`, launcher `/usr/local/bin/sls-camera`
+- Captures dir `/data/sls-captures`
+- SDDM autologin → **`sls`** (Lubuntu 26.04)
+- Autostart SLS Camera
+- Quiet session: no update notifiers, no LXQt power popups, logind no-suspend  
+  (see [POWER-AND-DISPLAY.md](POWER-AND-DISPLAY.md))
+
+Then set the lab password and reboot:
+
+```bash
+echo 'sls:20260717' | sudo chpasswd
+sudo hostnamectl set-hostname sls-appliance
+# remove temporary install user when ready (frees greeter / home scrap)
+# sudo userdel -r TEMP_INSTALL_USER
+sudo reboot
+```
+
+### Expected after reboot
+
+| Check | Expected |
+|--------|----------|
+| Login | Autologin as **`sls`** (not the ISO install user) |
+| Hostname | `sls-appliance` (optional but recommended) |
+| App | SLS Camera autostarts (or run `/usr/local/bin/sls-camera`) |
+| Password | `sls` / `20260717` for console unlock / SSH |
+
+Smoke without Kinect:
+
+```bash
+/usr/local/bin/sls-camera --demo
+```
+
+---
+
+## 6. Kinect USB passthrough (optional)
+
+Host must see all three NUI IDs (`lsusb | grep 045e`):
+
+| Product | ID |
+|---------|-----|
+| Motor | `045e:02b0` |
+| Camera | `045e:02ae` |
+| Audio | `045e:02bb` |
+
+```bash
+for id in 02b0 02ae 02bb; do
+  cat >/tmp/k-$id.xml <<EOF
+<hostdev mode='subsystem' type='usb' managed='yes'>
+  <source>
+    <vendor id='0x045e'/>
+    <product id='0x$id'/>
+  </source>
+</hostdev>
+EOF
+  virsh -c qemu:///system attach-device sls-appliance-phase1 /tmp/k-$id.xml --live --config
+done
+```
+
+In guest: `lsusb | grep 045e`, then `/usr/local/bin/sls-camera` (no `--demo`).
+
+Detach when done so the host can use the Kinect again:
+
+```bash
+for id in 02b0 02ae 02bb; do
+  virsh -c qemu:///system detach-device sls-appliance-phase1 /tmp/k-$id.xml --live
+done
+```
+
+After a **guest reboot**, reattach if devices did not reappear (or keep `--config` hostdevs and ensure the physical Kinect is plugged before start).
+
+---
+
+## 7. Checklist — “rebuild looks right”
+
+- [ ] Guest is Lubuntu **26.04**  
+- [ ] Only appliance user **`sls`** is used day-to-day (`20260717`)  
+- [ ] Temporary ISO install user removed (or marked system account)  
+- [ ] SDDM autologin → `sls`  
+- [ ] `/usr/local/bin/sls-camera` works (`--demo` or live Kinect)  
+- [ ] No update / power-management popups after login  
+- [ ] Captures under `/data/sls-captures` when snapping  
+- [ ] Screenshots / notes: [FIRST-BOOT.md](FIRST-BOOT.md), [images/](images/README.md)  
+
+---
+
+## 8. Destroy and recreate (clean slate)
+
+```bash
+virsh -c qemu:///system destroy sls-appliance-phase1
+virsh -c qemu:///system undefine sls-appliance-phase1 --nvram --remove-all-storage
+# then repeat from section 2
+```
+
+---
+
+## Related docs
+
+| Doc | Topic |
+|-----|--------|
+| [BUILD.md](BUILD.md) | Host fetch/sync/install overview |
+| [FIRST-BOOT.md](FIRST-BOOT.md) | After appliance install |
+| [POWER-AND-DISPLAY.md](POWER-AND-DISPLAY.md) | No rotate, no suspend, no update popups, brightness |
+| [OFFLINE-MIRROR.md](OFFLINE-MIRROR.md) | vendor/ debs + wheels |
+| [HARDWARE.md](HARDWARE.md) | Kinect BOM |

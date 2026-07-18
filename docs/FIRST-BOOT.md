@@ -1,13 +1,23 @@
 # First boot (appliance)
 
+## Lab VM credentials (rebuild standard)
+
+| User | Password | Purpose |
+|------|----------|---------|
+| **`sls`** | **`20260717`** | Appliance autologin, SSH, field app session (**use this**) |
+
+Lab-only — change on real tablets. Full rebuild procedure: **[VM-REBUILD.md](VM-REBUILD.md)**.
+
 ## Phase 1 (install-appliance.sh)
 
 After install on a blank Ubuntu/Lubuntu system:
 
 1. Reboot  
-2. Auto-login as user **`sls`** (if LightDM/GDM config applied; **Lubuntu 26.04 uses SDDM** — autologin may need a separate SDDM config)  
+2. Auto-login as user **`sls`** (SDDM on Lubuntu 26.04; also LightDM/GDM when present)  
 3. Autostart launches **`/usr/local/bin/sls-camera`** when logged in as `sls`  
 4. SLS app opens fullscreen  
+
+If a temporary ISO install user still exists (e.g. leftover desktop scrap), remove it and keep only **`sls`** — see [VM-REBUILD.md](VM-REBUILD.md).
 
 Without a Kinect (VM smoke test), run:
 
