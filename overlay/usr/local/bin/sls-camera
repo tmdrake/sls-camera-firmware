@@ -1,16 +1,25 @@
 #!/usr/bin/env bash
 # Firmware-installed launcher for SLS Camera (appliance / tablet)
 #
-# Respects the *app's* quit intent via process exit codes (sls-camera#4):
-#   0  — clean quit (return to session / desktop)
+# App exit-code contract (sls-camera#4):
+#   0  — clean quit
 #   10 — operator requested host power-off
 #   11 — relaunch app (kiosk)
 #
-# Until the app emits those codes, set SLS_ON_QUIT=shutdown for legacy
-# “any exit → poweroff” behavior, or SLS_QUIT_FALLBACK=shutdown with
-# SLS_ON_QUIT=app (default) so exit 0 still powers off on current builds.
-set -euo pipefail
+# Defaults (appliance): SLS_ON_QUIT=app, SLS_QUIT_FALLBACK=shutdown
+# so exit 0 still powers off until the app emits 10.
+set -u
 export PATH="${HOME}/.local/bin:/usr/local/bin:${PATH}"
+
+LOG="${SLS_LAUNCHER_LOG:-/data/sls-captures/launcher.log}"
+if [[ ! -d "$(dirname "$LOG")" ]]; then
+  LOG="${TMPDIR:-/tmp}/sls-camera-launcher.log"
+fi
+_log() {
+  local line="[$(date -Iseconds 2>/dev/null || date)] $*"
+  echo "$line" >>"$LOG" 2>/dev/null || true
+  echo "$line"
+}
 
 # Writable captures on appliance data volume when present
 if [[ -d /data/sls-captures ]]; then
@@ -20,104 +29,111 @@ fi
 APP_ROOT="${SLS_APP_ROOT:-/opt/sls-camera}"
 VIEWER="${APP_ROOT}/software/linux/viewer"
 if [[ ! -x "${VIEWER}/run.sh" ]]; then
-  echo "SLS Camera not installed at ${VIEWER}" >&2
+  _log "ERROR: SLS Camera not installed at ${VIEWER}"
   exit 1
 fi
 
-# Exit-code contract (keep in sync with sls-camera issue #4 / viewer docs)
 readonly SLS_EXIT_OK=0
 readonly SLS_EXIT_POWEROFF=10
 readonly SLS_EXIT_RELAUNCH=11
 
-# How to interpret app exit:
-#   app       — honor exit codes 10/11; exit 0 → SLS_QUIT_FALLBACK (default shutdown on appliance)
-#   shutdown  — any exit → power off (legacy, ignore codes except we still run cleanup path)
-#   restart   — any exit → relaunch
-#   none      — any exit → return to desktop
 SLS_ON_QUIT="${SLS_ON_QUIT:-app}"
-# When SLS_ON_QUIT=app and exit code is 0 (today's app always does this on Quit):
 SLS_QUIT_FALLBACK="${SLS_QUIT_FALLBACK:-shutdown}"
 
 _power_off() {
-  if command -v loginctl >/dev/null 2>&1; then
-    loginctl poweroff 2>/dev/null && return 0
-  fi
-  if command -v systemctl >/dev/null 2>&1; then
-    systemctl poweroff 2>/dev/null && return 0
-  fi
+  _log "power-off requested (uid=$(id -u) user=$(id -un))"
+  # Prefer passwordless sudo paths that match /etc/sudoers.d/sls-poweroff.
+  # Do NOT treat bare loginctl/systemctl as success — they often fail without polkit.
   if command -v sudo >/dev/null 2>&1; then
-    sudo -n /sbin/poweroff 2>/dev/null || sudo -n /usr/sbin/poweroff 2>/dev/null || true
+    if sudo -n /usr/sbin/poweroff >>"$LOG" 2>&1; then
+      _log "poweroff via sudo /usr/sbin/poweroff"
+      return 0
+    fi
+    if sudo -n /sbin/poweroff >>"$LOG" 2>&1; then
+      _log "poweroff via sudo /sbin/poweroff"
+      return 0
+    fi
+    if sudo -n /usr/bin/systemctl poweroff >>"$LOG" 2>&1; then
+      _log "poweroff via sudo systemctl poweroff"
+      return 0
+    fi
+    if sudo -n /bin/systemctl poweroff >>"$LOG" 2>&1; then
+      _log "poweroff via sudo /bin/systemctl poweroff"
+      return 0
+    fi
   fi
-  /sbin/poweroff 2>/dev/null || /usr/sbin/poweroff 2>/dev/null || true
+  # Last resorts (may work as root only)
+  /usr/sbin/poweroff >>"$LOG" 2>&1 || /sbin/poweroff >>"$LOG" 2>&1 || true
+  _log "ERROR: all poweroff methods failed — see log and sudoers.d/sls-poweroff"
+  return 1
 }
 
 _relaunch() {
-  echo "SLS Camera: relaunching…"
+  _log "relaunching app…"
   sleep 1
   exec /usr/local/bin/sls-camera "$@"
 }
 
 cd "${VIEWER}"
+_log "starting run.sh args=$* SLS_ON_QUIT=${SLS_ON_QUIT} FALLBACK=${SLS_QUIT_FALLBACK}"
 set +e
 ./run.sh "$@"
 code=$?
-set -e
+set +e
 
-echo "SLS Camera exited with code ${code} (SLS_ON_QUIT=${SLS_ON_QUIT})"
+_log "app exited code=${code}"
 
 case "${SLS_ON_QUIT}" in
   app|respect|codes)
     case "${code}" in
       "${SLS_EXIT_POWEROFF}")
-        echo "App requested power-off (exit ${SLS_EXIT_POWEROFF})"
-        _power_off
+        _log "exit ${SLS_EXIT_POWEROFF}: app requested power-off"
+        _power_off || true
         ;;
       "${SLS_EXIT_RELAUNCH}")
-        echo "App requested relaunch (exit ${SLS_EXIT_RELAUNCH})"
+        _log "exit ${SLS_EXIT_RELAUNCH}: app requested relaunch"
         _relaunch "$@"
         ;;
       "${SLS_EXIT_OK}")
-        # App clean quit — honor fallback until viewer implements #4 fully
         case "${SLS_QUIT_FALLBACK}" in
           shutdown|poweroff|off)
-            echo "Clean quit (0); SLS_QUIT_FALLBACK=${SLS_QUIT_FALLBACK} → power off"
-            _power_off
+            _log "exit 0 + FALLBACK=shutdown → power off"
+            _power_off || true
             ;;
           restart|loop|relaunch)
             _relaunch "$@"
             ;;
           none|exit|desktop|"")
-            exit 0
+            _log "exit 0 + FALLBACK=none → desktop"
             ;;
           *)
-            echo "Unknown SLS_QUIT_FALLBACK=${SLS_QUIT_FALLBACK}" >&2
-            exit 0
+            _log "unknown SLS_QUIT_FALLBACK=${SLS_QUIT_FALLBACK}"
             ;;
         esac
         ;;
       *)
-        # Crash / error: do not power off; optional relaunch
+        _log "non-zero exit ${code} (crash?) — not powering off"
         if [[ "${SLS_QUIT_ON_ERROR:-none}" == "restart" ]]; then
           _relaunch "$@"
         fi
-        exit "${code}"
         ;;
     esac
     exit "${code}"
     ;;
   shutdown|poweroff|off)
-    echo "Legacy SLS_ON_QUIT=shutdown → power off"
-    _power_off
+    _log "SLS_ON_QUIT=shutdown → power off (any exit)"
+    _power_off || true
     exit "${code}"
     ;;
   restart|loop|relaunch)
     _relaunch "$@"
     ;;
   none|exit|desktop)
+    _log "SLS_ON_QUIT=none → desktop"
     exit "${code}"
     ;;
   *)
-    echo "Unknown SLS_ON_QUIT=${SLS_ON_QUIT}; exiting" >&2
+    _log "unknown SLS_ON_QUIT=${SLS_ON_QUIT}"
     exit "${code}"
     ;;
 esac

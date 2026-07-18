@@ -53,6 +53,17 @@ SLS_ON_QUIT=app SLS_QUIT_FALLBACK=none /usr/local/bin/sls-camera
 
 Lab VM credentials: **`sls` / `20260717`** — see [VM-REBUILD.md](VM-REBUILD.md).
 
+Launcher debug log (guest): `/data/sls-captures/launcher.log` (or `/tmp/sls-camera-launcher.log`).
+
+### Login screen once instead of autologin
+
+SDDM can drop to the greeter if the session **crashes** or is torn down mid-boot. With **`Relogin=true`**, the next attempt should autologin again as `sls`. Check:
+
+```bash
+journalctl -u sddm -b
+# look for: sddm-helper crashed / Authentication error
+```
+
 ### Screenshots (Phase 1 VM — Lubuntu 26.04)
 
 Full-size PNGs live in [`docs/images/`](images/README.md).

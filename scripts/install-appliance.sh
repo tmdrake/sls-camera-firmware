@@ -263,12 +263,19 @@ fi
 # SDDM autologin (Lubuntu 26.04 default display manager)
 if [[ -d /etc/sddm.conf.d ]] || command -v sddm >/dev/null 2>&1 || [[ -f /etc/sddm.conf ]]; then
   mkdir -p /etc/sddm.conf.d
-  cat >/etc/sddm.conf.d/50-sls-autologin.conf <<EOF
+  if [[ -f "$OVERLAY/etc/sddm.conf.d/50-sls-autologin.conf" ]]; then
+    # Prefer overlay (Relogin=true so greeter is not sticky after session crash)
+    sed "s/^User=.*/User=$SLS_USER/" \
+      "$OVERLAY/etc/sddm.conf.d/50-sls-autologin.conf" \
+      >/etc/sddm.conf.d/50-sls-autologin.conf
+  else
+    cat >/etc/sddm.conf.d/50-sls-autologin.conf <<EOF
 [Autologin]
 User=$SLS_USER
 Session=Lubuntu
-Relogin=false
+Relogin=true
 EOF
+  fi
   # Lubuntu ships lubuntu_settings / sddm.conf with User=install-user — override
   if [[ -f /etc/sddm.conf ]]; then
     if grep -q '^\[Autologin\]' /etc/sddm.conf; then
