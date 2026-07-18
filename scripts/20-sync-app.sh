@@ -12,7 +12,7 @@ cd "$ROOT"
 
 APP_URL="${APP_URL:-https://github.com/tmdrake/sls-camera.git}"
 if [[ -z "${APP_REF:-}" ]]; then
-  APP_REF="$(grep -vE '^\s*(#|$)' packages/app-ref.txt | head -1 | tr -d '[:space:]')"
+  APP_REF="$(grep -vE '^\s*(#|$)' packages/app-ref.txt | head -1 | tr -d '[:space:]' || true)"
 fi
 APP_REF="${APP_REF:-main}"
 DEST="$ROOT/build/app"
