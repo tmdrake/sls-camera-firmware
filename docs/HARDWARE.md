@@ -49,3 +49,16 @@ Kinect can be **USB-passed** into the Phase 1 KVM guest for freenect smoke (all 
 - Writable **`/data`** partition or folder for snaps/AVI when root is locked  
 
 See also `sls-camera` → `hardware/README.md`.
+
+## Removable media stick (test)
+
+Prep a USB for Auto captures / field media tests (destroys stick contents):
+
+```bash
+# host — auto-selects single removable USB, or pass /dev/sdX
+./scripts/prep-sls-media-usb.sh
+# or: sudo ./scripts/prep-sls-media-usb.sh /dev/sda
+```
+
+Result: FAT32 label **`SLS-MEDIA`**, folder **`sls-captures/`**.  
+See app Captures **Auto** path and [sls-camera#5](https://github.com/tmdrake/sls-camera/issues/5) / [#7](https://github.com/tmdrake/sls-camera/issues/7).
