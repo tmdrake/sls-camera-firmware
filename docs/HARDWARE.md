@@ -17,6 +17,19 @@
 - Brightness: **app Settings owns it** (sysfs / brightnessctl / xrandr)  
 - **Disable auto-rotate** and desktop auto-brightness fighting the app — see [POWER-AND-DISPLAY.md](POWER-AND-DISPLAY.md)  
 
+### Resolutions (field + test)
+
+| Environment | Resolution | Notes |
+|-------------|------------|--------|
+| Phase 1 KVM guest (default Spice) | **1280×800** | Probed: avail ~1280×768 after LXQt panel, dpr=1.0, 96 dpi |
+| Common cheap 8–10″ tablets | **1280×800** | Same class as VM; good BOM target |
+| Many 10″ Windows tablets | **1920×1200** | Usually comfortable for Settings |
+| Short / old panels | **1024×600** | Risk: Settings rows clip without scroll |
+
+App depth canvas is **1280×720** composite; that fits 800p. **Settings** has grown (Captures, Power off on Quit, DrakeVox, …) with 44px touch buttons and **no scroll area** — bottom controls can sit off-screen on short heights or HiDPI.
+
+**App team:** log geometry at startup + scroll/clamp Settings — [sls-camera#6](https://github.com/tmdrake/sls-camera/issues/6).
+
 ## Power
 
 - Prefer **external DC** for Kinect + tablet during investigations  

@@ -79,8 +79,14 @@ _relaunch() {
   exec /usr/local/bin/sls-camera "$@"
 }
 
+# Best-effort display geometry for field/tablet notes (app team may log more precisely)
+if [[ -n "${DISPLAY:-}" ]] && command -v xrandr >/dev/null 2>&1; then
+  _geom="$(xrandr 2>/dev/null | awk '/ connected/{print; exit}')"
+  _log "display: ${_geom:-unknown} (see sls-camera#6 for Settings fit)"
+fi
+
 cd "${VIEWER}"
-_log "starting run.sh args=$* SLS_ON_QUIT=${SLS_ON_QUIT} FALLBACK=${SLS_QUIT_FALLBACK}"
+_log "starting run.sh args=$* SLS_ON_QUIT=${SLS_ON_QUIT} FALLBACK=${SLS_QUIT_FALLBACK} SLS_QUIT_ACTION=${SLS_QUIT_ACTION:-}"
 set +e
 ./run.sh "$@"
 code=$?
