@@ -189,13 +189,27 @@ Smoke without Kinect:
 
 ## 6. Kinect USB passthrough (optional)
 
-Host must see all three NUI IDs (`lsusb | grep 045e`):
+**Preferred:** use the helper script (handles stale hostdevs, re-enum wait, status):
+
+```bash
+# on the build host, from sls-camera-firmware
+./scripts/vm-kinect-usb.sh status
+./scripts/vm-kinect-usb.sh reattach    # fix most “failed to attach” cases
+./scripts/vm-kinect-usb.sh detach      # return Kinect to host
+
+# optional: reattach + freenect-camtest over SSH (lab password)
+SSHPASS=20260717 GUEST_SSH=sls@192.168.122.100 ./scripts/vm-kinect-usb.sh test
+```
 
 | Product | ID |
 |---------|-----|
 | Motor | `045e:02b0` |
 | Camera | `045e:02ae` |
 | Audio | `045e:02bb` |
+
+Host must see all three before attach (`lsusb | grep 045e`). Power brick required.
+
+Manual one-liner (if you prefer not to use the script):
 
 ```bash
 for id in 02b0 02ae 02bb; do
@@ -213,15 +227,7 @@ done
 
 In guest: `lsusb | grep 045e`, then `/usr/local/bin/sls-camera` (no `--demo`).
 
-Detach when done so the host can use the Kinect again:
-
-```bash
-for id in 02b0 02ae 02bb; do
-  virsh -c qemu:///system detach-device sls-appliance-phase1 /tmp/k-$id.xml --live
-done
-```
-
-After a **guest reboot**, reattach if devices did not reappear (or keep `--config` hostdevs and ensure the physical Kinect is plugged before start).
+After a **guest reboot**, run `./scripts/vm-kinect-usb.sh reattach` if freenect cannot open the camera.
 
 ---
 
