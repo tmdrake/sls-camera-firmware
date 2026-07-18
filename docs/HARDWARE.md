@@ -28,7 +28,10 @@
 
 App depth canvas is **1280×720** composite; that fits 800p. **Settings** has grown (Captures, Power off on Quit, DrakeVox, …) with 44px touch buttons and **no scroll area** — bottom controls can sit off-screen on short heights or HiDPI.
 
-**App team:** log geometry at startup + scroll/clamp Settings — [sls-camera#6](https://github.com/tmdrake/sls-camera/issues/6).
+**App / field tracking:**
+
+- [sls-camera#6](https://github.com/tmdrake/sls-camera/issues/6) — log geometry + Settings scroll/clamp  
+- [sls-camera#7](https://github.com/tmdrake/sls-camera/issues/7) — **screen variants + hardware tree** (wipe real tablets, device matrix for other BOM)
 
 ## Power
 
