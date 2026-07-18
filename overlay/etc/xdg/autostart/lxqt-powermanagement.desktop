@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=LXQt Power Management (disabled by SLS appliance)
+Comment=Idle/battery popups disabled — field appliance uses app brightness + logind policy
+Exec=true
+Hidden=true
+NoDisplay=true
+OnlyShowIn=LXQt;
+X-GNOME-Autostart-enabled=false

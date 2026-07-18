@@ -145,6 +145,29 @@ if [[ -f "$OVERLAY/etc/systemd/logind.conf.d/50-sls-no-suspend.conf" ]]; then
   echo "Installed logind no-suspend policy (see docs/POWER-AND-DISPLAY.md)"
 fi
 
+# --- quiet field session: no update popups, no LXQt power idle warnings ---
+if [[ -f "$OVERLAY/etc/apt/apt.conf.d/99sls-disable-auto-upgrades" ]]; then
+  install -D -m 644 "$OVERLAY/etc/apt/apt.conf.d/99sls-disable-auto-upgrades" \
+    /etc/apt/apt.conf.d/99sls-disable-auto-upgrades
+fi
+if [[ -f /etc/apt/apt.conf.d/20auto-upgrades ]]; then
+  cat >/etc/apt/apt.conf.d/20auto-upgrades <<'EOF'
+APT::Periodic::Update-Package-Lists "0";
+APT::Periodic::Unattended-Upgrade "0";
+EOF
+fi
+systemctl disable --now unattended-upgrades.service 2>/dev/null || true
+systemctl disable --now apt-daily.timer apt-daily-upgrade.timer 2>/dev/null || true
+systemctl mask apt-daily.service apt-daily-upgrade.service 2>/dev/null || true
+systemctl disable --now packagekit.service 2>/dev/null || true
+systemctl mask packagekit.service 2>/dev/null || true
+for f in lubuntu-update-autostart.desktop lxqt-powermanagement.desktop lxqt-xscreensaver-autostart.desktop; do
+  if [[ -f "$OVERLAY/etc/xdg/autostart/$f" ]]; then
+    install -D -m 644 "$OVERLAY/etc/xdg/autostart/$f" "/etc/xdg/autostart/$f"
+  fi
+done
+echo "Disabled auto-updates + power/screensaver autostart popups"
+
 # --- app tree ---
 echo "Installing app → $APP_ROOT"
 mkdir -p "$APP_ROOT"

@@ -12,6 +12,22 @@ Issue tracking for packaging deps stays on **sls-camera** ([#2](https://github.c
 | **Auto-rotate** | **Disable** on field tablets | Avoid portrait flip mid-investigation |
 | **Screen blank / DPMS** | **Disable or very long** while session is kiosk/field | Prevent black screen during idle |
 | **Lock screen** | **Disable** for appliance user `sls` | No password gate on reboot kiosk path |
+| **Power management popups** | **Disable** LXQt power manager idle/lid/battery watchers | Overlay hides `lxqt-powermanagement` autostart |
+| **Update notifications** | **Disable** unattended-upgrades + Lubuntu update notifier | No “updates available” during investigations |
+
+### Quiet updates (no popups)
+
+Installed by `install-appliance.sh` from `overlay/`:
+
+| Path | Effect |
+|------|--------|
+| `etc/apt/apt.conf.d/99sls-disable-auto-upgrades` | APT periodic = 0 |
+| `systemctl disable/mask` apt-daily, unattended-upgrades, packagekit | No background upgrade agents |
+| `etc/xdg/autostart/lubuntu-update-autostart.desktop` | `Hidden=true` |
+| `etc/xdg/autostart/lxqt-powermanagement.desktop` | `Hidden=true` |
+| `home/sls/.config/lxqt/lxqt-powermanagement.conf` | All watchers off |
+
+Field tablets can still be updated **manually** by a tech (`apt update && apt upgrade`) when planned.
 
 ### Disable rotation (LXQt / X11 — validate in VM or tablet)
 

@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=Lubuntu Update Notifier (disabled by SLS appliance)
+Exec=true
+Hidden=true
+NoDisplay=true
+X-GNOME-Autostart-enabled=false
