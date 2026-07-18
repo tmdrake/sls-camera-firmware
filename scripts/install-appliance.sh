@@ -211,6 +211,30 @@ EOF
   echo "Configured LightDM autologin for $SLS_USER"
 fi
 
+# SDDM autologin (Lubuntu 26.04 default display manager)
+if [[ -d /etc/sddm.conf.d ]] || command -v sddm >/dev/null 2>&1 || [[ -f /etc/sddm.conf ]]; then
+  mkdir -p /etc/sddm.conf.d
+  cat >/etc/sddm.conf.d/50-sls-autologin.conf <<EOF
+[Autologin]
+User=$SLS_USER
+Session=Lubuntu
+Relogin=false
+EOF
+  # Lubuntu ships lubuntu_settings / sddm.conf with User=install-user — override
+  if [[ -f /etc/sddm.conf ]]; then
+    if grep -q '^\[Autologin\]' /etc/sddm.conf; then
+      sed -i "/^\[Autologin\]/,/^\[/{s/^User=.*/User=$SLS_USER/; s/^Session=.*/Session=Lubuntu/}" /etc/sddm.conf \
+        || true
+    else
+      printf '\n[Autologin]\nUser=%s\nSession=Lubuntu\n' "$SLS_USER" >>/etc/sddm.conf
+    fi
+  fi
+  if [[ -f /etc/sddm.conf.d/lubuntu_settings.conf ]]; then
+    sed -i "s/^User=.*/User=$SLS_USER/" /etc/sddm.conf.d/lubuntu_settings.conf 2>/dev/null || true
+  fi
+  echo "Configured SDDM autologin for $SLS_USER"
+fi
+
 # GDM autologin if present
 if [[ -f /etc/gdm3/custom.conf ]]; then
   if ! grep -q "AutomaticLoginEnable" /etc/gdm3/custom.conf 2>/dev/null; then
