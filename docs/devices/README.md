@@ -7,9 +7,9 @@ App tracking: [sls-camera#7](https://github.com/tmdrake/sls-camera/issues/7) · 
 
 | Unit ID | Role | Device doc | OS now | Wipe status |
 |---------|------|------------|--------|-------------|
-| **tablet-01** | Primary field slate | [rca-w101as23t2.md](rca-w101as23t2.md) | Windows 10 | **Not wiped** (Phase 1) |
-| **tablet-02** | Second unit | [tablet-02.md](tablet-02.md) | Windows 10 (pending full msinfo) | **Not wiped** |
-| **kinect-kit** | Shared sensor + power | [kinect-portable-power.md](kinect-portable-power.md) | n/a | Both tablets use this class of kit |
+| **tablet-01** | RCA W101AS23T2 | [rca-w101as23t2.md](rca-w101as23t2.md) | Win10, 800×1280, 2 GB | **Not wiped** (Phase 1) |
+| **tablet-02** | TMAX TM800W610L | [tablet-02.md](tablet-02.md) | Win10 x64, **1200×1920**, 2 GB | **Not wiped** (Phase 1) |
+| **kinect-kit** | Shared sensor + power | [kinect-portable-power.md](kinect-portable-power.md) | n/a | Both tablets + portable PSU |
 
 Both tablets are intended to run with a **Kinect 360 + portable power supply** for mobile investigations.
 
