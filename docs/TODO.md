@@ -15,16 +15,19 @@
 
 - [x] Recursive offline debs + apt `--no-download` install path (see sls-camera #2 / #3)  
 - [x] Test on clean Lubuntu 26.04 VM (`--demo` smoke + screenshots)  
-- [ ] Complete autologin for **SDDM** (Lubuntu 26.04) in addition to LightDM/GDM  
-- [ ] Wire captures path into app (`SLS_CAPTURES_DIR` in `sls-camera` if not present) — track in app repo  
+- [x] SDDM autologin `sls` + Relogin=true  
+- [x] `SLS_CAPTURES_DIR` + quit exit-10 contracts (app pin 59ebee6)  
 - [ ] Test on real tablet  
 - [ ] Optional: one-shot kinect-audio-setup doc only (no MS blobs)  
 
-## Phase 2 — ISO
+## Phase 2 — blow-and-go media
 
-- [ ] Choose toolchain: live-build / Cubic / mkosi  
-- [ ] Build bootable ISO with offline packages  
-- [ ] Calamares/Ubiquity “appliance” install profile  
+- [x] Stage A plan: [ISO-AND-FIELD-USB.md](ISO-AND-FIELD-USB.md)  
+- [x] `50-build-field-usb.sh` — offline firmware tree on SLS-MEDIA stick  
+- [x] `prep-sls-media-usb.sh` — wipe stick to FAT32 SLS-MEDIA  
+- [ ] Populate field USB and run `install-from-usb.sh` on a wiped tablet  
+- [ ] Stage B: choose Cubic / live-build / mkosi  
+- [ ] Single appliance ISO in `out/`  
 - [ ] Touch-friendly minimal session (strip stock desktop chrome)  
 
 ## Phase 3 — harden

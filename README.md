@@ -30,7 +30,7 @@ The **application source of truth** remains **`sls-camera`**. This repo is packa
 |-------|-------------|--------|
 | **0** | Repo scaffold, docs, offline fetch + app sync scripts | **Done** (recursive offline debs) |
 | **1** | `install-appliance.sh` on a blank Ubuntu/Lubuntu install (offline) | **Proven on Lubuntu 26.04 VM** (`--demo` smoke) |
-| **2** | Bootable **ISO** (live-build / Cubic / mkosi) | Later |
+| **2** | Blow-and-go media: **Stage A field USB** now; single ISO later | **Stage A scripts ready** |
 | **3** | Read-only root + `/data`, power policy, factory reset | Later |
 
 ### Screenshots (Phase 1 VM)
@@ -39,32 +39,31 @@ See [docs/FIRST-BOOT.md](docs/FIRST-BOOT.md) and [docs/images/](docs/images/READ
 
 ### Rebuild the test VM
 
-Step-by-step KVM rebuild (Lubuntu 26.04, user **`sls` / `20260717` lab password):
+→ **[docs/VM-REBUILD.md](docs/VM-REBUILD.md)** (lab user **`sls` / `20260717`**)
 
-→ **[docs/VM-REBUILD.md](docs/VM-REBUILD.md)**
+### Blow-and-go field USB (Phase 2 Stage A)
+
+**Build + install instructions:** → **[docs/ISO-AND-FIELD-USB.md](docs/ISO-AND-FIELD-USB.md)**
+
+```bash
+cd ~/sls-camera-firmware
+./scripts/10-fetch-offline.sh && ./scripts/20-sync-app.sh
+sudo ./scripts/prep-sls-media-usb.sh /dev/sdX      # wipe stick
+sudo ./scripts/50-build-field-usb.sh /dev/sdX1     # copy firmware
+# On tablet after Lubuntu 26.04 install:
+#   bash /media/$USER/SLS-MEDIA/install-from-usb.sh && sudo reboot
+```
 
 ## Quick start (build host)
 
 ```bash
-# Clone next to sls-camera (recommended layout)
-cd ~
-git clone https://github.com/tmdrake/sls-camera-firmware.git   # when remote exists
-# or work from this tree
-
-cd sls-camera-firmware
+cd ~/sls-camera-firmware
 ./scripts/00-check-host.sh
-
-# Optional: refresh offline cache (needs network once)
 ./scripts/10-fetch-offline.sh
-
-# Sync pinned sls-camera into build/app (or vendor/sls-camera)
 ./scripts/20-sync-app.sh
-
-# Phase 1: install onto THIS machine as appliance (sudo; careful)
-# ./scripts/install-appliance.sh
-
-# Phase 2: ISO (stub until toolchain chosen)
-# ./scripts/30-build-iso.sh
+./scripts/30-build-iso.sh status
+# Field USB: see docs/ISO-AND-FIELD-USB.md
+# Phase 1 on a machine: sudo ./scripts/install-appliance.sh  (careful)
 ```
 
 ## Directory map
