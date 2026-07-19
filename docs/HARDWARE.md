@@ -31,7 +31,13 @@ App depth canvas is **1280×720** composite; that fits 800p. **Settings** has gr
 **App / field tracking:**
 
 - [sls-camera#6](https://github.com/tmdrake/sls-camera/issues/6) — log geometry + Settings scroll/clamp  
-- [sls-camera#7](https://github.com/tmdrake/sls-camera/issues/7) — **screen variants + hardware tree** (wipe real tablets, device matrix for other BOM)
+- [sls-camera#7](https://github.com/tmdrake/sls-camera/issues/7) — **screen variants + hardware tree** (wipe real tablets, device matrix for other BOM)  
+
+### Known devices
+
+| ID | Doc | Res | RAM | Notes |
+|----|-----|-----|-----|--------|
+| RCA **W101AS23T2** | [devices/rca-w101as23t2.md](devices/rca-w101as23t2.md) | **800×1280** portrait | **2 GB** | Atom x5-Z8350, ~29 GB Biwin, Goodix touch, UEFI SB off |
 
 ## Power
 
