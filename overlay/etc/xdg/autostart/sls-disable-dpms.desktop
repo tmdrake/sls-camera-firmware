@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=SLS disable DPMS / blanking
+Comment=Keep display awake for field investigations
+Exec=/usr/local/bin/sls-disable-dpms
+Terminal=false
+X-GNOME-Autostart-enabled=true
+OnlyShowIn=LXQt;X-LXQt;

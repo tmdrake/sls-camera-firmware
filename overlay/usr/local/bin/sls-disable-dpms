@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# Disable X11 screen blanking and DPMS for the appliance session.
+# Complements logind no-suspend and LXQt power-manager hide.
+# App-side idle inhibit (while SLS is running) is tracked on sls-camera.
+set -euo pipefail
+export DISPLAY="${DISPLAY:-:0}"
+# Wait briefly for X
+for _ in 1 2 3 4 5 6 7 8 9 10; do
+  if xset q >/dev/null 2>&1; then
+    break
+  fi
+  sleep 0.5
+done
+xset s off 2>/dev/null || true
+xset s noblank 2>/dev/null || true
+xset -dpms 2>/dev/null || true
+xset dpms 0 0 0 2>/dev/null || true

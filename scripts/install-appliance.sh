@@ -161,12 +161,15 @@ systemctl disable --now apt-daily.timer apt-daily-upgrade.timer 2>/dev/null || t
 systemctl mask apt-daily.service apt-daily-upgrade.service 2>/dev/null || true
 systemctl disable --now packagekit.service 2>/dev/null || true
 systemctl mask packagekit.service 2>/dev/null || true
-for f in lubuntu-update-autostart.desktop lxqt-powermanagement.desktop lxqt-xscreensaver-autostart.desktop; do
+for f in lubuntu-update-autostart.desktop lxqt-powermanagement.desktop lxqt-xscreensaver-autostart.desktop sls-disable-dpms.desktop; do
   if [[ -f "$OVERLAY/etc/xdg/autostart/$f" ]]; then
     install -D -m 644 "$OVERLAY/etc/xdg/autostart/$f" "/etc/xdg/autostart/$f"
   fi
 done
-echo "Disabled auto-updates + power/screensaver autostart popups"
+if [[ -f "$OVERLAY/usr/local/bin/sls-disable-dpms" ]]; then
+  install -D -m 755 "$OVERLAY/usr/local/bin/sls-disable-dpms" /usr/local/bin/sls-disable-dpms
+fi
+echo "Disabled auto-updates + power/screensaver autostart; session DPMS off helper installed"
 
 # --- app tree ---
 echo "Installing app → $APP_ROOT"

@@ -85,6 +85,13 @@ if [[ -n "${DISPLAY:-}" ]] && command -v xrandr >/dev/null 2>&1; then
   _log "display: ${_geom:-unknown} (see sls-camera#6 for Settings fit)"
 fi
 
+# Keep panel awake while field app runs (also see sls-disable-dpms autostart)
+if [[ -n "${DISPLAY:-}" ]] && command -v xset >/dev/null 2>&1; then
+  xset s off 2>/dev/null || true
+  xset s noblank 2>/dev/null || true
+  xset -dpms 2>/dev/null || true
+fi
+
 cd "${VIEWER}"
 _log "starting run.sh args=$* SLS_ON_QUIT=${SLS_ON_QUIT} FALLBACK=${SLS_QUIT_FALLBACK} SLS_QUIT_ACTION=${SLS_QUIT_ACTION:-}"
 set +e

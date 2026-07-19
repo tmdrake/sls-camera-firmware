@@ -46,37 +46,25 @@ Overlay path (future Phase 1 harden): drop a small script or systemd unit under 
 
 ### Disable idle blank / suspend (session)
 
-```bash
-# LXQt session (typical Lubuntu)
-# Power management → sleep/suspend: never on AC; prefer never on battery for field kits with brick.
+Appliance install ships:
 
-# X11 DPMS off for current session
+| Piece | Role |
+|-------|------|
+| `logind` `50-sls-no-suspend.conf` | Ignore lid / suspend keys / idle action |
+| LXQt power manager | Autostart **hidden** |
+| `/usr/local/bin/sls-disable-dpms` + xdg autostart | `xset s off`, `-dpms` at login |
+| `sls-camera` launcher | Re-applies `xset` before starting the app |
+
+```bash
+# Manual session fix (guest or tablet X11)
 xset s off
-xset -dpkg 2>/dev/null || true
 xset s noblank
 xset -dpms
-
-# systemd logind (system-wide appliance)
-# /etc/systemd/logind.conf.d/sls-no-suspend.conf
-# [Login]
-# HandleLidSwitch=ignore
-# HandleSuspendKey=ignore
-# IdleAction=ignore
 ```
 
-Example drop-in for firmware overlay:
+**App gap (dev should implement):** while the field UI is running, call ScreenSaver / logind **Inhibit** so idle blanking cannot return after 10 minutes without touch. Tracked: [sls-camera#9](https://github.com/tmdrake/sls-camera/issues/9).
 
-```ini
-# overlay/etc/systemd/logind.conf.d/50-sls-no-suspend.conf
-[Login]
-HandleLidSwitch=ignore
-HandleLidSwitchExternalPower=ignore
-HandleSuspendKey=ignore
-HandleHibernateKey=ignore
-IdleAction=ignore
-```
-
-App-side **inhibit suspend while running** remains Phase 3 product work (`sls-camera` backlog).
+**VM flicker note:** host monitor power-save (e.g. GNOME idle 5 min) can blank the **physical** display while virt-viewer is open even if the guest app is active — SPICE may not count as user activity. Check host power settings too.
 
 ### Quit → power off (app-driven)
 
