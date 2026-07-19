@@ -1,8 +1,10 @@
 # Device: RCA W101AS23T2
 
+**Unit ID:** `tablet-01`  
 **Inventory / hostname (Windows):** `SLS-CAMERA`  
 **Source:** Windows 10 `msinfo32` export `tablet.txt` on USB “PEN DRIVE” (2026-07-18).  
-**Tracking:** [sls-camera#7](https://github.com/tmdrake/sls-camera/issues/7) hardware tree · UI fit [#6](https://github.com/tmdrake/sls-camera/issues/6)
+**Tracking:** [sls-camera#7](https://github.com/tmdrake/sls-camera/issues/7) hardware tree · UI fit [#6](https://github.com/tmdrake/sls-camera/issues/6)  
+**Field kit:** Kinect 360 + portable power — [kinect-portable-power.md](kinect-portable-power.md)
 
 ## Summary
 

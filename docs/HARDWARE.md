@@ -1,15 +1,17 @@
 # Hardware assumptions
 
-## Sensor
+## Sensor + field power
 
-- **Xbox 360 Kinect** (NUI): motor `045e:02b0`, audio `045e:02ad`, camera `045e:02ae`  
-- External **Kinect power brick** required  
-- USB 2.0 host; avoid hubs when possible  
+- **Xbox 360 Kinect** (NUI): motor `045e:02b0`, camera `045e:02ae`, audio `045e:02bb` (some units `02ad`)  
+- **Portable power supply** (or wall brick) required for Kinect — not bus-powered  
+- USB data to tablet; prefer direct port / short cable  
+- Details: [devices/kinect-portable-power.md](devices/kinect-portable-power.md)  
 
 ## Compute
 
 - Phase 1–2 primary target: **x86_64** tablet or mini-PC (Intel/AMD)  
 - ARM64 tablets: later (re-fetch wheels/debs for arch)  
+- **Fleet / hardware tree:** [devices/README.md](devices/README.md)  
 
 ## Display
 
