@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=SLS lock landscape
+Comment=Force landscape orientation for field tablets (no auto-rotate)
+Exec=/usr/local/bin/sls-lock-landscape
+Terminal=false
+X-GNOME-Autostart-enabled=true
+OnlyShowIn=LXQt;X-LXQt;

@@ -79,10 +79,17 @@ _relaunch() {
   exec /usr/local/bin/sls-camera "$@"
 }
 
+# Fleet policy: lock landscape before app (native glass may be portrait — see sls-lock-landscape)
+if [[ -n "${DISPLAY:-}" ]] && [[ -x /usr/local/bin/sls-lock-landscape ]]; then
+  /usr/local/bin/sls-lock-landscape || true
+elif [[ -n "${DISPLAY:-}" ]] && command -v sls-lock-landscape >/dev/null 2>&1; then
+  sls-lock-landscape || true
+fi
+
 # Best-effort display geometry for field/tablet notes (app team may log more precisely)
 if [[ -n "${DISPLAY:-}" ]] && command -v xrandr >/dev/null 2>&1; then
   _geom="$(xrandr 2>/dev/null | awk '/ connected/{print; exit}')"
-  _log "display: ${_geom:-unknown} (see sls-camera#6 for Settings fit)"
+  _log "display: ${_geom:-unknown} (landscape lock; see sls-camera#6 for Settings fit)"
 fi
 
 # Keep panel awake while field app runs (also see sls-disable-dpms autostart)

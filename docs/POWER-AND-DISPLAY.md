@@ -9,7 +9,8 @@ Issue tracking for packaging deps stays on **sls-camera** ([#2](https://github.c
 | Concern | Policy | Notes |
 |---------|--------|--------|
 | **Brightness** | **App controls it** (Settings ±10%) | Uses sysfs backlight, `brightnessctl`, or `xrandr` fallback — see `sls-camera` `backlight.py` |
-| **Auto-rotate** | **Disable** on field tablets | Avoid portrait flip mid-investigation |
+| **Orientation** | **Locked landscape** on all field tablets | Native glass may be portrait; firmware forces width ≥ height |
+| **Auto-rotate** | **Disabled** (`iio-sensor-proxy` masked) | No portrait flip mid-investigation |
 | **Screen blank / DPMS** | **Disable or very long** while session is kiosk/field | Prevent black screen during idle |
 | **Lock screen** | **Disable** for appliance user `sls` | No password gate on reboot kiosk path |
 | **Power management popups** | **Disable** LXQt power manager idle/lid/battery watchers | Overlay hides `lxqt-powermanagement` autostart |
@@ -29,20 +30,34 @@ Installed by `install-appliance.sh` from `overlay/`:
 
 Field tablets can still be updated **manually** by a tech (`apt update && apt upgrade`) when planned.
 
-### Disable rotation (LXQt / X11 — validate in VM or tablet)
+### Landscape lock (tablet-01, tablet-02, fleet default)
+
+Both fleet tablets ship with **portrait-native** panels under Windows:
+
+| Unit | Windows msinfo | Appliance target (landscape) |
+|------|----------------|------------------------------|
+| **tablet-01** RCA W101AS23T2 | 800×1280 | **1280×800** |
+| **tablet-02** TMAX TM800W610L | 1200×1920 | **1920×1200** |
+
+Installed by `install-appliance.sh` from `overlay/`:
+
+| Piece | Role |
+|-------|------|
+| `/usr/local/bin/sls-lock-landscape` | For each connected X11 output: if height > width, `xrandr --rotate left` (then `right` if still portrait) |
+| `etc/xdg/autostart/sls-lock-landscape.desktop` | Runs at LXQt login for user `sls` |
+| `sls-camera` launcher | Re-runs lock immediately before starting the app |
+| `systemctl mask iio-sensor-proxy` | Stops accelerometer auto-rotate from undoing landscape |
+
+Optional env: `SLS_LANDSCAPE_ROTATE=left|right` if a unit’s “up” is the wrong long edge (touch / bezel logo).
 
 ```bash
-# Session-level: turn off monitor rotation sensors if present
-gsettings set org.gnome.settings-daemon.plugins.orientation active false 2>/dev/null || true
-
-# X11: force landscape (example output name from xrandr)
-# xrandr --output eDP-1 --rotate normal
-
-# iio-sensor-proxy: stop auto-rotate service on appliance images
-sudo systemctl disable --now iio-sensor-proxy.service 2>/dev/null || true
+# Manual check (guest or tablet X11)
+/usr/local/bin/sls-lock-landscape
+xrandr | awk '/ connected/{print}'
+# expect width >= height on the active mode
 ```
 
-Overlay path (future Phase 1 harden): drop a small script or systemd unit under `overlay/` that runs for user `sls`.
+**Touch:** RandR rotation usually updates libinput’s coordinate matrix. After first wipe, verify drag directions; if inverted, try `SLS_LANDSCAPE_ROTATE=right` and re-login.
 
 ### Disable idle blank / suspend (session)
 
@@ -53,7 +68,8 @@ Appliance install ships:
 | `logind` `50-sls-no-suspend.conf` | Ignore lid / suspend keys / idle action |
 | LXQt power manager | Autostart **hidden** |
 | `/usr/local/bin/sls-disable-dpms` + xdg autostart | `xset s off`, `-dpms` at login |
-| `sls-camera` launcher | Re-applies `xset` before starting the app |
+| `/usr/local/bin/sls-lock-landscape` + xdg autostart | Force landscape; see section above |
+| `sls-camera` launcher | Re-applies landscape lock + `xset` before starting the app |
 
 ```bash
 # Manual session fix (guest or tablet X11)

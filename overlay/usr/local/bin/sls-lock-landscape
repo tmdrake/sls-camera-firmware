@@ -1,0 +1,121 @@
+#!/usr/bin/env bash
+# Force X11 outputs into landscape (width >= height) and keep them there.
+#
+# Fleet policy (tablet-01 RCA, tablet-02 TMAX, and future slates):
+#   Windows msinfo often reports native portrait glass (e.g. 800×1280,
+#   1200×1920). The appliance session must present landscape so the SLS UI
+#   and Settings layout match field use — not free auto-rotate.
+#
+# Optional:
+#   SLS_LANDSCAPE_ROTATE=left|right   preferred RandR rotate when flipping
+#                                    portrait→landscape (default: left)
+#   DISPLAY=:0                       default if unset
+set -u
+export DISPLAY="${DISPLAY:-:0}"
+export PATH="/usr/local/bin:/usr/bin:/bin:${PATH}"
+
+LOG="${SLS_LAUNCHER_LOG:-/data/sls-captures/launcher.log}"
+if [[ ! -d "$(dirname "$LOG")" ]]; then
+  LOG="${TMPDIR:-/tmp}/sls-camera-launcher.log"
+fi
+_log() {
+  local line="[$(date -Iseconds 2>/dev/null || date)] sls-lock-landscape: $*"
+  echo "$line" >>"$LOG" 2>/dev/null || true
+}
+
+if ! command -v xrandr >/dev/null 2>&1; then
+  _log "xrandr not found — skip"
+  exit 0
+fi
+
+# Wait briefly for X (autostart races)
+for _ in 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20; do
+  if xrandr >/dev/null 2>&1; then
+    break
+  fi
+  sleep 0.5
+done
+if ! xrandr >/dev/null 2>&1; then
+  _log "X not ready — skip"
+  exit 0
+fi
+
+# Preferred rotate when converting portrait → landscape
+PREF="${SLS_LANDSCAPE_ROTATE:-left}"
+case "$PREF" in
+  left|right|inverted|normal) ;;
+  *) PREF=left ;;
+esac
+# Alternate if preferred still leaves portrait
+case "$PREF" in
+  left) ALT=right ;;
+  right) ALT=left ;;
+  *) ALT=left ;;
+esac
+
+_current_wh() {
+  # Args: output name. Prints "W H" of current CRTC geometry, or empty.
+  local out="$1" line w h
+  line="$(xrandr 2>/dev/null | awk -v o="$out" '$1==o && / connected/ {print; exit}')"
+  [[ -n "$line" ]] || return 1
+  if [[ "$line" =~ ([0-9]+)x([0-9]+)\+[0-9]+\+[0-9]+ ]]; then
+    w="${BASH_REMATCH[1]}"
+    h="${BASH_REMATCH[2]}"
+    echo "$w $h"
+    return 0
+  fi
+  return 1
+}
+
+_force_landscape() {
+  local out="$1"
+  local wh w h
+  wh="$(_current_wh "$out" || true)"
+  if [[ -z "$wh" ]]; then
+    _log "output ${out}: no active mode — skip"
+    return 0
+  fi
+  w="${wh%% *}"
+  h="${wh##* }"
+  if (( w >= h )); then
+    _log "output ${out}: already landscape ${w}x${h}"
+    return 0
+  fi
+
+  _log "output ${out}: portrait ${w}x${h} → rotate ${PREF}"
+  xrandr --output "$out" --rotate "$PREF" 2>/dev/null || true
+  wh="$(_current_wh "$out" || true)"
+  if [[ -n "$wh" ]]; then
+    w="${wh%% *}"
+    h="${wh##* }"
+    if (( w >= h )); then
+      _log "output ${out}: landscape ${w}x${h} (rotate ${PREF})"
+      return 0
+    fi
+  fi
+
+  _log "output ${out}: still portrait after ${PREF}, try ${ALT}"
+  xrandr --output "$out" --rotate "$ALT" 2>/dev/null || true
+  wh="$(_current_wh "$out" || true)"
+  if [[ -n "$wh" ]]; then
+    w="${wh%% *}"
+    h="${wh##* }"
+    if (( w >= h )); then
+      _log "output ${out}: landscape ${w}x${h} (rotate ${ALT})"
+      return 0
+    fi
+  fi
+  _log "output ${out}: WARN could not reach landscape (last ${w:-?}x${h:-?})"
+}
+
+mapfile -t OUTPUTS < <(xrandr 2>/dev/null | awk '/ connected/{print $1}')
+if [[ ${#OUTPUTS[@]} -eq 0 ]]; then
+  _log "no connected outputs"
+  exit 0
+fi
+
+for out in "${OUTPUTS[@]}"; do
+  _force_landscape "$out"
+done
+
+exit 0

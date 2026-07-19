@@ -14,8 +14,8 @@ After install on a blank Ubuntu/Lubuntu system:
 
 1. Reboot  
 2. Auto-login as user **`sls`** (SDDM on Lubuntu 26.04; also LightDM/GDM when present)  
-3. Autostart launches **`/usr/local/bin/sls-camera`** when logged in as `sls`  
-4. SLS app opens fullscreen  
+3. Session autostart: **landscape lock** + DPMS off, then **`/usr/local/bin/sls-camera`** as `sls`  
+4. SLS app opens fullscreen (expect width ≥ height; native portrait panels are rotated)  
 
 If a temporary ISO install user still exists (e.g. leftover desktop scrap), remove it and keep only **`sls`** — see [VM-REBUILD.md](VM-REBUILD.md).
 

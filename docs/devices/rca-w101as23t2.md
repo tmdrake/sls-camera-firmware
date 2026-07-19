@@ -22,7 +22,7 @@
 | Secure Boot | **Off** | Good for Lubuntu |
 | TPM / BitLocker auto | Not usable | Fine for field Linux |
 | Display | **Intel HD Graphics** (Cherry Trail, DEV_22B0) | |
-| Resolution (Windows) | **800 × 1280 @ 59 Hz** | **Portrait native** — Settings/menu clip risk high; see #6/#7 |
+| Resolution (Windows) | **800 × 1280 @ 59 Hz** | Native **portrait**; appliance locks **1280×800** landscape |
 | Storage | **Biwin ~28.8 GB** fixed disk | ~28 GB C: NTFS, ~16.6 GB free at capture time |
 | Free for Linux | Tight if dual-boot; full wipe OK for appliance | Aim minimal install |
 | Touch | **Goodix** (`GoodixTouchDriver`) | Linux may need `goodix` / i2c-hid quirks — verify after wipe |
@@ -33,7 +33,7 @@
 
 1. **Install Lubuntu 26.04 amd64** (UEFI). Do not use i386 ISO.  
 2. **RAM 2 GB:** use lightweight session (already LXQt); consider `zram`; monitor OOM during pose.  
-3. **Portrait 800×1280:** app Settings must scroll/clamp (#6); test landscape if rotation works.  
+3. **Landscape lock:** native glass is **800×1280** portrait; firmware forces **1280×800** via `sls-lock-landscape` (fleet policy — both tablets). Verify touch axes after first wipe.  
 4. **~29 GB eMMC:** full-disk Lubuntu + `/opt/sls-camera` venv is OK; leave room for `/data/sls-captures`.  
 5. **Kinect:** external brick + USB; after wipe, no VM passthrough script.  
 6. **Goodix touch:** first boot checklist item — if no touch, keyboard/SSH fallback.  

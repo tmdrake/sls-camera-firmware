@@ -17,18 +17,19 @@
 
 - Touchscreen preferred; app supports large Qt buttons + keyboard  
 - Brightness: **app Settings owns it** (sysfs / brightnessctl / xrandr)  
-- **Disable auto-rotate** and desktop auto-brightness fighting the app — see [POWER-AND-DISPLAY.md](POWER-AND-DISPLAY.md)  
+- **Locked landscape** for all field tablets (`sls-lock-landscape`); **auto-rotate off** — see [POWER-AND-DISPLAY.md](POWER-AND-DISPLAY.md)  
+- Desktop auto-brightness must not fight the app  
 
 ### Resolutions (field + test)
 
 | Environment | Resolution | Notes |
 |-------------|------------|--------|
-| Phase 1 KVM guest (default Spice) | **1280×800** | Probed: avail ~1280×768 after LXQt panel, dpr=1.0, 96 dpi |
-| Common cheap 8–10″ tablets | **1280×800** | Same class as VM; good BOM target |
-| Many 10″ Windows tablets | **1920×1200** | Usually comfortable for Settings |
+| Phase 1 KVM guest (default Spice) | **1280×800** | Already landscape; lock is a no-op |
+| Fleet after landscape lock | **1280×800** / **1920×1200** | tablet-01 / tablet-02 targets |
+| Native Windows msinfo (pre-lock) | **800×1280** / **1200×1920** | Portrait glass — firmware rotates at session start |
 | Short / old panels | **1024×600** | Risk: Settings rows clip without scroll |
 
-App depth canvas is **1280×720** composite; that fits 800p. **Settings** has grown (Captures, Power off on Quit, DrakeVox, …) with 44px touch buttons and **no scroll area** — bottom controls can sit off-screen on short heights or HiDPI.
+App depth canvas is **1280×720** composite; that fits 800p landscape. **Settings** still needs scroll/clamp on short heights ([#6](https://github.com/tmdrake/sls-camera/issues/6)).
 
 **App / field tracking:**
 
@@ -37,11 +38,11 @@ App depth canvas is **1280×720** composite; that fits 800p. **Settings** has gr
 
 ### Known devices (fleet)
 
-| Unit | Doc | Res | RAM | Notes |
-|------|-----|-----|-----|--------|
-| **tablet-01** RCA W101AS23T2 | [devices/rca-w101as23t2.md](devices/rca-w101as23t2.md) | **800×1280** portrait | **2 GB** | Atom x5-Z8350, ~29 GB Biwin, Goodix, UEFI SB off |
-| **tablet-02** TMAX TM800W610L | [devices/tablet-02.md](devices/tablet-02.md) | **1200×1920** portrait | **2 GB** | Atom x5-Z8300, ~29 GB SanDisk, Win x64, UEFI SB off |
-| **kinect-kit** | [devices/kinect-portable-power.md](devices/kinect-portable-power.md) | n/a | n/a | Kinect + portable PSU for both tablets |
+| Unit | Doc | Native (Win) | Appliance (locked) | RAM | Notes |
+|------|-----|--------------|--------------------|-----|--------|
+| **tablet-01** RCA W101AS23T2 | [devices/rca-w101as23t2.md](devices/rca-w101as23t2.md) | 800×1280 portrait | **1280×800** landscape | **2 GB** | Atom x5-Z8350, ~29 GB Biwin, Goodix, UEFI SB off |
+| **tablet-02** TMAX TM800W610L | [devices/tablet-02.md](devices/tablet-02.md) | 1200×1920 portrait | **1920×1200** landscape | **2 GB** | Atom x5-Z8300, ~29 GB SanDisk, Win x64, UEFI SB off |
+| **kinect-kit** | [devices/kinect-portable-power.md](devices/kinect-portable-power.md) | n/a | n/a | n/a | Kinect + portable PSU for both tablets |
 
 ## Power
 

@@ -21,7 +21,7 @@
 | BIOS mode | **UEFI** | Match ISO boot |
 | Secure Boot | **Off** | Good for Lubuntu |
 | Display | Intel HD Graphics (Cherry Trail) | |
-| Resolution (Windows) | **1200 × 1920 @ 60 Hz** | **Portrait** (taller than tablet-01 800×1280) — Settings scroll still critical (#6) |
+| Resolution (Windows) | **1200 × 1920 @ 60 Hz** | Native **portrait** glass; appliance locks **1920×1200** landscape |
 | Storage (fixed) | **SanDisk DF4032 ~29.1 GB** (3 partitions) | Same ~32 GB class eMMC as tablet-01 |
 | Removable (at capture) | Generic SD32G ~29 GB | Export media only |
 | Touch | *Not clear in msinfo* — verify after Linux | Check Goodix/i2c-hid on wipe |
@@ -35,18 +35,19 @@
 | CPU | Atom x5-**Z8350** | Atom x5-**Z8300** |
 | RAM | 2 GB | 2 GB |
 | Windows bitness | X86 (likely 32-bit Win) | **x64** |
-| Resolution | **800×1280** portrait | **1200×1920** portrait |
+| Resolution (native) | **800×1280** portrait | **1200×1920** portrait |
+| Appliance locked | **1280×800** landscape | **1920×1200** landscape |
 | Storage | Biwin ~29 GB | SanDisk DF4032 ~29 GB |
 | Secure Boot | Off | Off |
 | Field kit | Kinect + portable PSU | Same class |
 
-Both are **Cherry Trail 2 GB portrait slates** — same appliance profile, slightly different glass size/aspect.
+Both are **Cherry Trail 2 GB slates** with portrait-native glass — firmware **locks landscape** for the same appliance UI profile (`sls-lock-landscape`).
 
 ## Implications for blow-and-go
 
 1. Install **Lubuntu 26.04 amd64**, UEFI.  
 2. **2 GB RAM** — same caveats as tablet-01 (zram, light session).  
-3. **1200×1920 portrait** — Settings must scroll (#6); log geometry after first boot.  
+3. **Landscape lock** — expect **1920×1200** after login; log geometry if Settings still clips (#6).  
 4. **~29 GB** disk — full wipe, single OS, `/data/sls-captures`.  
 5. Kinect + portable power on hand (fleet kit).  
 
