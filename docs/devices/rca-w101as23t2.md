@@ -63,6 +63,19 @@ This unit **can** run the SLS appliance (Lubuntu 26.04, autologin, app, quit→p
 - Unplugging OTG restored touch immediately in lab (2026-07-21).  
 - If someone plugs lab debug gear into OTG and touch dies: remove that USB first.
 
+### Charger plugs in → tablet powers on
+
+**Observed:** attaching the dedicated 5 V charger can **power the unit on by itself** (LED/hardware path). Common on cheap tablets; usually **EC/firmware**, not Linux or Windows choosing it.
+
+| Approach | Realistic on this RCA? |
+|----------|-------------------------|
+| **UEFI/setup “Power on AC”** | Often **no** menu item on AMI/vendor Cherry Trail; if present, disable “Wake on AC / Power on by AC” |
+| **Windows** | Same EC behavior under Win10; rare advanced power options; not a clean “charge only” mode |
+| **Linux after boot** | Could auto-`poweroff` if AC online — **unreliable here**: `axp288_charger/online` often stays **0** even with brick + charge LED (see lab charge notes) |
+| **Practical lab** | Accept wake-on-plug; or charge while already off and unplug carefully; don’t fight EC unless a BIOS toggle appears |
+
+Do **not** build field product around “silent charge only” on this chassis without a proven AC-detect sysfs path.
+
 ## Phase 1 / wipe status
 
 - **Wiped** Lubuntu 26.04 appliance (lab): boot → app → shutdown OK; touch/Kinect power are the main field risks.  
