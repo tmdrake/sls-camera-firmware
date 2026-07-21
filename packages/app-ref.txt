@@ -1,3 +1,3 @@
 # Pinned sls-camera commit for firmware builds (update with scripts/20-sync-app.sh)
-# 6fed4e7 — Settings two-pane landscape layout; #6 scroll/geometry; #2/#4/#5 contracts
-6fed4e71db005345a8ebe63914c8eba1f149b08e
+# bcc5ffc — #8 format+polkit, #9 wake lock, 16:10 Settings, spectrum styles, quit exit-10 only
+bcc5ffc24d691f6640838bd1329e3e6ebfda6f5e
