@@ -12,7 +12,7 @@ Field product can ship a **quiet, branded boot → app** experience. Lab builds 
 | **Plymouth bootsplash** | Kernel boot logo / spinner | **Firmware** | **High** for production feel |
 | **GRUB** | Rare (hold Shift) | Firmware | Low — keep `quiet splash` |
 | **SDDM greeter** | Login (normally **skipped** via autologin) | Firmware | Low unless session crashes to greeter |
-| **Desktop wallpaper / LXQt** | Flash before app | Firmware | Medium — dark/minimal; strip chrome |
+| **Desktop wallpaper / LXQt** | Flash before app | Firmware | Medium — dark/minimal; **strip chrome** → [KIOSK-DESKTOP.md](KIOSK-DESKTOP.md) |
 | **App splash** | “Starting / Reconnecting …” | **App** (+ assets from firmware) | **Highest** day-to-day visibility |
 | **In-app chrome** | Title, DrakeVox, dialogs, colors | **App** | High — config/env driven |
 

@@ -32,7 +32,6 @@
 - [ ] Populate field USB and run `install-from-usb.sh` on a wiped tablet  
 - [ ] Stage B: choose Cubic / live-build / mkosi  
 - [ ] Single appliance ISO in `out/`  
-- [ ] Touch-friendly minimal session (strip stock desktop chrome)  
 
 ## Phase 3 — harden + production polish
 
@@ -40,6 +39,11 @@
 - [ ] Power: inhibit suspend while app running (app #9 wake lock exists; host policy already partial)  
 - [ ] Factory reset flow  
 - [ ] Signed release artifacts / version stamp  
+- [ ] **Kiosk desktop cleanup** — strip stock Lubuntu/LXQt chrome (see [KIOSK-DESKTOP.md](KIOSK-DESKTOP.md))  
+  - [ ] Hide/remove panel, desktop icons, file-manager desktop, noisy applets  
+  - [ ] Minimal or single-app session (boot → SLS, not full desktop playground)  
+  - [ ] Drop leftover install users; field image = user `sls` only  
+  - [ ] Lab vs field profile (SSH/debug OK in lab; locked-down field image)  
 - [ ] **Branding / splash / bootscreens** — production look (see [BRANDING.md](BRANDING.md))  
   - [ ] App: `SLS_PRODUCT_NAME` + splash image/text (coord with `sls-camera` TODO)  
   - [ ] Firmware: `branding/` pack + launcher env; optional wallpaper  

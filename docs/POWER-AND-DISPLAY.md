@@ -111,7 +111,7 @@ Lab without poweroff: `SLS_QUIT_ACTION=exit /usr/local/bin/sls-camera`.
 
 1. Operator uses **SLS Settings → Brightness**, not the desktop brightness applet.  
 2. Appliance images should avoid a second auto-brightness daemon fighting sysfs.  
-3. If both desktop and app adjust backlight, last writer wins — prefer killing/hiding desktop brightness applets on kiosk chrome cleanup.
+3. If both desktop and app adjust backlight, last writer wins — prefer killing/hiding desktop brightness applets on kiosk chrome cleanup ([KIOSK-DESKTOP.md](KIOSK-DESKTOP.md) Phase 3).
 
 ## USB / Kinect in a VM (validation only)
 

@@ -31,7 +31,7 @@ The **application source of truth** remains **`sls-camera`**. This repo is packa
 | **0** | Repo scaffold, docs, offline fetch + app sync scripts | **Done** (recursive offline debs) |
 | **1** | `install-appliance.sh` on a blank Ubuntu/Lubuntu install (offline) | **Proven on Lubuntu 26.04 VM** (`--demo` smoke) |
 | **2** | Blow-and-go media: **Stage A field USB** now; single ISO later | **Stage A scripts ready** |
-| **3** | Read-only root + `/data`, power policy, factory reset, **branding/splash** | Later — [BRANDING.md](docs/BRANDING.md) |
+| **3** | Harden: `/data`, power, **kiosk desktop cleanup**, branding/splash | Later — [KIOSK-DESKTOP.md](docs/KIOSK-DESKTOP.md) · [BRANDING.md](docs/BRANDING.md) |
 
 ### Screenshots (Phase 1 VM)
 
@@ -70,7 +70,7 @@ cd ~/sls-camera-firmware
 
 ```text
 sls-camera-firmware/
-  docs/           Architecture, build, offline mirror, first-boot, hardware
+  docs/           Architecture, build, offline, first-boot, hardware, branding
   packages/       apt + Python package lists, pinned app commit
   scripts/        fetch, sync, install-appliance, build-iso stubs
   overlay/        files for target rootfs (autologin, udev, launcher)
