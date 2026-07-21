@@ -25,7 +25,7 @@
 | Resolution (Windows) | **800 × 1280 @ 59 Hz** | Native **portrait**; appliance locks **1280×800** landscape |
 | Storage | **Biwin ~28.8 GB** fixed disk | ~28 GB C: NTFS, ~16.6 GB free at capture time |
 | Free for Linux | Tight if dual-boot; full wipe OK for appliance | Aim minimal install |
-| Touch | **Goodix** (`GoodixTouchDriver`) | Linux may need `goodix` / i2c-hid quirks — verify after wipe |
+| Touch | **Goodix** (`GDIX1002:00`) | **Intermittent I2C death** on Linux (probe -110); cold boot often fixes — [TOUCH-GOODIX.md](../TOUCH-GOODIX.md) |
 | USB | Intel USB 3.0 xHCI (22B5) | Prefer direct port for Kinect |
 | Windows | 10 Home 19044 | Wipe candidate for Stage A field USB |
 
