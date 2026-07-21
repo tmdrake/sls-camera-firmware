@@ -35,8 +35,31 @@ ssh sls@192.168.122.100
 Console:
 
 ```bash
-virt-viewer -c qemu:///system -a sls-appliance-phase1
+# Layout / Settings QA: pin guest resolution — do NOT auto-resize with the window
+virt-viewer -c qemu:///system -a sls-appliance-phase1 --auto-resize never
 ```
+
+### SPICE auto-resize (why the guest “forces” a new resolution)
+
+**Not an SLS app bug.** With **virtio** video + **spice-vdagent** (stock Lubuntu), resizing the **virt-viewer** window asks the guest to match that size. Modes like **5120×2160** or odd preferred sizes appear; fixed **1280×800** / **1920×1200** layout tests break.
+
+| Earlier smoke tests | What changed |
+|---------------------|--------------|
+| Window often left alone / scaled by viewer | Dragging the window edge triggers agent resize |
+| Preferred mode stuck at 1280×800 | Mode list reshuffles; preferred can become something else |
+
+**For tablet layout QA (keep resolution fixed):**
+
+```bash
+virt-viewer … --auto-resize never
+# guest (optional pin):
+export DISPLAY=:0
+xrandr --output Virtual-1 --mode 1280x800    # or 1920x1200
+```
+
+Scale the viewer window if you want a larger host window without changing guest pixels (viewer zoom / window size with auto-resize off).
+
+Real tablets have no SPICE — this only affects the lab VM.
 
 ---
 
