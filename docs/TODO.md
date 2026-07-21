@@ -18,6 +18,8 @@
 - [x] SDDM autologin `sls` + Relogin=true  
 - [x] `SLS_CAPTURES_DIR` + quit exit-10 contracts (app pin 59ebee6)  
 - [x] Landscape lock for fleet tablets (`sls-lock-landscape` + mask iio-sensor-proxy)  
+- [x] App pin **6fed4e7** (Settings two-pane landscape; #6 geometry/scroll)  
+- [x] Installer-USB root stamp templates (`stamp-installer-usb.sh`)  
 - [ ] Test on real tablet  
 - [ ] Optional: one-shot kinect-audio-setup doc only (no MS blobs)  
 

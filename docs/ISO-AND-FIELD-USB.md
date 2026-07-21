@@ -10,6 +10,33 @@ Phase 2 packages that into **operator media**.
 
 ---
 
+## Two different sticks (do not mix roles)
+
+| Stick | Label / role | What is on it | Used when |
+|-------|----------------|---------------|-----------|
+| **OS installer** | Stock Lubuntu 26.04 (Rufus/dd/Ventoy) | Live + Calamares installer | Wipe / install Lubuntu to eMMC |
+| **SLS-MEDIA** | FAT32 **`SLS-MEDIA`** | Offline firmware + `install-from-usb.sh` | After OS install → appliance |
+
+Optional: put short SLS instructions on the **installer** stick root (if that partition is writable — Ventoy or free FAT):
+
+```bash
+# host — stick mounted or /dev/sdX1
+sudo ./scripts/stamp-installer-usb.sh /dev/sdX1
+# writes: README-SLS-INSTALL.txt, NEXT-STEPS.txt, install-sls-after-os.sh
+```
+
+Pure `dd` of the ISO is often **read-only** ISO9660 — stamp will fail; keep paper/docs or a second stick. Templates live in `media/installer-usb/`.
+
+### Live boot checklist (you are here)
+
+| Do | Don’t |
+|----|--------|
+| Explore Wi‑Fi, touch, disk size, UEFI | Expect `install-appliance` to persist on live |
+| Run **Install Lubuntu** → internal eMMC | Wipe the wrong disk |
+| After reboot to eMMC, run **SLS-MEDIA** install | Confuse installer stick with field USB |
+
+---
+
 ## Quick start (host → stick → tablet)
 
 ### A. Build host: refresh offline pack + app
@@ -24,7 +51,7 @@ cd ~/sls-camera-firmware
 ./scripts/30-build-iso.sh status # readiness check
 ```
 
-### B. Prepare the USB stick (destroys stick data)
+### B. Prepare the **SLS-MEDIA** USB stick (destroys stick data)
 
 Identify the stick carefully (`lsblk` — **not** NVMe):
 
@@ -128,6 +155,7 @@ SLS-MEDIA/
 | `20-sync-app.sh` | Clone/checkout app at `packages/app-ref.txt` → `build/app/` |
 | `prep-sls-media-usb.sh` | Wipe USB disk → FAT32 **SLS-MEDIA** |
 | `50-build-field-usb.sh` | Copy firmware + write `install-from-usb.sh` / `BOOTSTRAP.md` |
+| `stamp-installer-usb.sh` | Write root README / next-steps on **OS installer** stick (if writable) |
 | `30-build-iso.sh status` | Check readiness |
 | `30-build-iso.sh usb …` | Alias for `50-build-field-usb.sh` |
 | `install-appliance.sh` | On **target**: system install (user, packages, app, SDDM, quiet session) |

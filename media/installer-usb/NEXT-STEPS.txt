@@ -1,0 +1,37 @@
+SLS — next steps after live / OS install
+========================================
+
+A. Still in LIVE session only?
+   - Use installer GUI → “Install Lubuntu” → internal disk.
+   - Live root is RAM; field appliance install must run on the installed OS.
+
+B. Lubuntu installed and rebooted to eMMC?
+   1. Plug SLS-MEDIA (field USB built with 50-build-field-usb.sh).
+   2. Terminal:
+
+        cd /media/$USER/SLS-MEDIA || cd /run/media/$USER/SLS-MEDIA
+        bash install-from-usb.sh
+
+   3. Reboot → autologin sls → SLS Camera.
+
+C. Only this installer stick + network (lab shortcut)?
+   On the installed system (not ideal for field offline):
+
+        sudo apt update
+        # clone firmware + run install-appliance with network
+        # Prefer building SLS-MEDIA on the host instead.
+
+D. Build host: refresh SLS-MEDIA stick
+        cd ~/sls-camera-firmware
+        ./scripts/10-fetch-offline.sh
+        ./scripts/20-sync-app.sh
+        sudo ./scripts/prep-sls-media-usb.sh /dev/sdX    # whole disk
+        sudo ./scripts/50-build-field-usb.sh /dev/sdX1
+
+E. Stamp THIS installer stick again (writable partition only)
+        sudo ./scripts/stamp-installer-usb.sh /dev/sdX1
+        # or: ./scripts/stamp-installer-usb.sh /run/media/$USER/<LABEL>
+
+Do not confuse sticks
+  • Installer USB  = boots Lubuntu live / Calamares install
+  • SLS-MEDIA      = offline debs + install-from-usb.sh + captures
