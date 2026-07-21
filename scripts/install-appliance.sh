@@ -234,6 +234,18 @@ if [[ -f "$OVERLAY/etc/sudoers.d/sls-poweroff" ]]; then
   fi
 fi
 
+# UDisks2 polkit: Format removable media without root password (sls-camera FORMAT-MEDIA-PRIVS)
+if [[ -f "$OVERLAY/etc/polkit-1/rules.d/60-sls-udisks-format.rules" ]]; then
+  install -D -m 644 "$OVERLAY/etc/polkit-1/rules.d/60-sls-udisks-format.rules" \
+    /etc/polkit-1/rules.d/60-sls-udisks-format.rules
+  if [[ "$SLS_USER" != "sls" ]]; then
+    sed -i "s/subject.user !== \"sls\"/subject.user !== \"${SLS_USER}\"/" \
+      /etc/polkit-1/rules.d/60-sls-udisks-format.rules
+  fi
+  systemctl restart polkit 2>/dev/null || true
+  echo "Installed polkit rule for UDisks2 format (user ${SLS_USER})"
+fi
+
 # captures
 mkdir -p "$DATA_CAPTURES"
 chown -R "$SLS_USER:$SLS_USER" /data 2>/dev/null || chown -R "$SLS_USER:$SLS_USER" "$DATA_CAPTURES"

@@ -1,0 +1,16 @@
+// SLS appliance — passwordless UDisks2 for kiosk user "sls" (format/mount removable).
+// Source of truth notes: sls-camera software/linux/docs/FORMAT-MEDIA-PRIVS.md
+// App media_format.py still refuses nvme / system paths / >128GiB.
+polkit.addRule(function(action, subject) {
+    if (subject.user !== "sls")
+        return polkit.Result.NOT_HANDLED;
+    if (action.id.indexOf("org.freedesktop.udisks2.") !== 0)
+        return polkit.Result.NOT_HANDLED;
+    if (action.id == "org.freedesktop.udisks2.modify-device" ||
+        action.id == "org.freedesktop.udisks2.filesystem-mount" ||
+        action.id == "org.freedesktop.udisks2.filesystem-mount-other-seat" ||
+        action.id == "org.freedesktop.udisks2.filesystem-unmount-others") {
+        return polkit.Result.YES;
+    }
+    return polkit.Result.NOT_HANDLED;
+});

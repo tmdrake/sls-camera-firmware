@@ -86,7 +86,12 @@ See [docs/OFFLINE-MIRROR.md](docs/OFFLINE-MIRROR.md).
 
 **Start here (app + FW shared rules):**  
 [FOR-FIRMWARE-TEAM.md](https://github.com/tmdrake/sls-camera/blob/main/software/linux/docs/FOR-FIRMWARE-TEAM.md)  
-— golden rules, `install-apt-deps.sh`, smoke checklist, quit exit codes.
+— blow-and-go index, offline apt, quit exit 10, **16:10**, polkit format rule, smoke checklist.
+
+**Format media without root password:**  
+[FORMAT-MEDIA-PRIVS.md](https://github.com/tmdrake/sls-camera/blob/main/software/linux/docs/FORMAT-MEDIA-PRIVS.md)  
+Overlay (shipped by `install-appliance.sh`):  
+`overlay/etc/polkit-1/rules.d/60-sls-udisks-format.rules`
 
 **Dependency & version-conflict tracking** lives on the app repo (not only here):
 
@@ -99,10 +104,14 @@ See [docs/OFFLINE-MIRROR.md](docs/OFFLINE-MIRROR.md).
 
 Appliance default: **`/data/sls-captures`**. Launcher sets `SLS_CAPTURES_DIR` when that directory exists. The app **honors** `SLS_CAPTURES_DIR` for the local captures root.
 
+App Settings **Format removable media…** (FAT32 `SLS-MEDIA`) uses UDisks2 first; install the polkit overlay so kiosk user `sls` is not prompted for root. Bench prep: `scripts/prep-sls-media-usb.sh`.
+
 ## Related app docs
 
-- [FOR-FIRMWARE-TEAM.md](https://github.com/tmdrake/sls-camera/blob/main/software/linux/docs/FOR-FIRMWARE-TEAM.md) (offline apt + contracts)  
+- [FOR-FIRMWARE-TEAM.md](https://github.com/tmdrake/sls-camera/blob/main/software/linux/docs/FOR-FIRMWARE-TEAM.md) (blow-and-go + contracts)  
+- [FORMAT-MEDIA-PRIVS.md](https://github.com/tmdrake/sls-camera/blob/main/software/linux/docs/FORMAT-MEDIA-PRIVS.md) (polkit rule)  
 - [FIELD-INSTALL.md](https://github.com/tmdrake/sls-camera/blob/main/software/linux/docs/FIELD-INSTALL.md) (dev host packaging)  
+- [HARDWARE-MATRIX.md](https://github.com/tmdrake/sls-camera/blob/main/software/linux/docs/HARDWARE-MATRIX.md) (16:10 fleet)  
 - [PRODUCT-VISION.md](https://github.com/tmdrake/sls-camera/blob/main/docs/PRODUCT-VISION.md)  
 - [UBUNTU-SETUP.md](https://github.com/tmdrake/sls-camera/blob/main/software/linux/docs/UBUNTU-SETUP.md)  
 

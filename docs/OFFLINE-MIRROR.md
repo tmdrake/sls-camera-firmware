@@ -112,4 +112,16 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 
 1. Bump package list when app `requirements.txt` changes.  
 2. Re-run `10-fetch-offline.sh` on the same Ubuntu series as the tablet (e.g. 24.04).  
-3. Update `packages/app-ref.txt` when promoting a new `sls-camera` release.  
+3. Update `packages/app-ref.txt` when promoting a new `sls-camera` release.
+
+
+## App handoff (sls-camera main)
+
+See **[FOR-FIRMWARE-TEAM.md](https://github.com/tmdrake/sls-camera/blob/main/software/linux/docs/FOR-FIRMWARE-TEAM.md)** for:
+
+- Blow-and-go install resource index (field USB, fetch, install-from-usb)
+- **Polkit rule** for Settings → Format removable media (no root password on kiosk)
+- Quit exit 10, 16:10 landscape, captures contracts
+
+Detail: [FORMAT-MEDIA-PRIVS.md](https://github.com/tmdrake/sls-camera/blob/main/software/linux/docs/FORMAT-MEDIA-PRIVS.md)  
+Overlay path to ship: `overlay/etc/polkit-1/rules.d/60-sls-udisks-format.rules`
