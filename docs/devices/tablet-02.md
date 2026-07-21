@@ -25,7 +25,23 @@
 | Storage (fixed) | **SanDisk DF4032 ~29.1 GB** (3 partitions) | Same ~32 GB class eMMC as tablet-01 |
 | Removable (at capture) | Generic SD32G ~29 GB | Export media only |
 | Touch | *Not clear in msinfo* — verify after Linux | Check Goodix/i2c-hid on wipe |
-| USB | (see Device Manager after wipe) | Kinect + portable PSU data cable |
+| USB | (see Device Manager after wipe) | **OTG required** for field charge/power control circuit + Kinect data path (see below) |
+
+## USB / OTG (field requirement — unlike tablet-01)
+
+| Port / path | tablet-01 RCA | **tablet-02 TMAX** |
+|-------------|---------------|---------------------|
+| **OTG / host USB** | **Not used** in normal field SLS (lab only; heavy OTG load can kill Goodix) | **Required** — charge + control circuit through OTG |
+| Dedicated 5 V charge jack | Used for tablet charge (Kinect unusable on that path) | N/A or secondary — primary is **OTG power path** |
+| Kinect data | Separate USB when available | Plan for OTG tree / hub carefully |
+| Charge-idle 15 min poweroff | **ENABLED=1** (dedicated charger) | Set **`ENABLED=0`** in `/etc/sls/charge-idle.conf` so unit can **stay on** while powered from OTG |
+
+**Firmware must not** treat “disable OTG” or “empty OTG for touch” as a fleet-wide rule — that is **RCA lab guidance only**. On TMAX:
+
+1. Keep USB role **host** and OTG port powered/working for the control circuit.  
+2. Prefer a **powered** intermediate hub if Kinect + charge circuit share the tree (avoid browning out touch/rails).  
+3. After wipe: verify OTG with stick + Ethernet/control board before field sign-off.  
+4. Do **not** apply RCA “unplug OTG to fix touch” as operator procedure on this unit.
 
 ## Comparison to tablet-01 (RCA W101AS23T2)
 
@@ -39,7 +55,9 @@
 | Appliance locked | **1280×800** landscape | **1920×1200** landscape |
 | Storage | Biwin ~29 GB | SanDisk DF4032 ~29 GB |
 | Secure Boot | Off | Off |
-| Field kit | Kinect + portable PSU | Same class |
+| **OTG in field** | **No** | **Yes (required)** |
+| Charge-idle auto poweroff | On (dedicated 5 V) | **Off** (OTG run/charge) |
+| Field kit | Kinect + portable PSU | Same class + **OTG control circuit** |
 
 Both are **Cherry Trail 2 GB slates** with portrait-native glass — firmware **locks landscape** for the same appliance UI profile (`sls-lock-landscape`).
 
@@ -50,6 +68,8 @@ Both are **Cherry Trail 2 GB slates** with portrait-native glass — firmware 
 3. **Landscape lock** — **`right`** rotate + touch follow; expect **1920×1200** after login; log geometry if Settings still clips (#6).  
 4. **~29 GB** disk — full wipe, single OS, `/data/sls-captures`.  
 5. Kinect + portable power on hand (fleet kit).  
+6. **OTG** must work for charge/control circuit — test before field; set charge-idle **`ENABLED=0`**.  
+
 
 ## Appliance status
 
