@@ -130,9 +130,9 @@ else
   fi
 fi
 
-# --- Kinect USB Audio firmware (network only; MS non-redistributable blob) ---
-# Not in vendor/debs public pack. When the tablet has network, install so spectrum
-# prefers Kinect array instead of ALSA "default" tablet mic.
+# --- Kinect USB Audio (app spectrum / Record) ---
+# Deb is a seed (offline from vendor/debs). MS UAC blob from vendor/kinect/ (fetch)
+# or network recovery. Never required for depth-only.
 _sls_has_network() {
   getent hosts archive.ubuntu.com >/dev/null 2>&1 && return 0
   getent hosts connectivity-check.ubuntu.com >/dev/null 2>&1 && return 0
@@ -140,37 +140,50 @@ _sls_has_network() {
   return 1
 }
 
+_sls_install_kinect_uac_file() {
+  local src=""
+  if [[ -f "$ROOT/vendor/kinect/UACFirmware" ]]; then
+    src="$ROOT/vendor/kinect/UACFirmware"
+  elif [[ -f "$ROOT/firmware/vendor/kinect/UACFirmware" ]]; then
+    src="$ROOT/firmware/vendor/kinect/UACFirmware"
+  fi
+  if [[ -n "$src" ]]; then
+    mkdir -p /lib/firmware/kinect
+    install -m 644 "$src" /lib/firmware/kinect/UACFirmware
+    echo "Installed Kinect UAC firmware from offline vendor/kinect/"
+    return 0
+  fi
+  return 1
+}
+
 _sls_install_kinect_audio() {
-  # Returns 0 if package configured / firmware likely present
   export DEBIAN_FRONTEND="${DEBIAN_FRONTEND:-noninteractive}"
-  # Accept package EULA prompts if debconf keys exist (best-effort)
   if command -v debconf-set-selections >/dev/null 2>&1; then
     echo 'kinect-audio-setup kinect-audio-setup/accept_eula boolean true' | debconf-set-selections 2>/dev/null || true
-    echo 'kinect-audio-setup kinect-audio-setup/eula note' | debconf-set-selections 2>/dev/null || true
   fi
-  apt-get update -qq 2>/dev/null || apt-get update || true
-  if ! apt-get install -y --no-install-recommends kinect-audio-setup alsa-utils 2>/tmp/sls-kinect-audio.log; then
-    echo "WARN: kinect-audio-setup apt install failed — trying MSI hash recovery…"
-    # MS re-hosted MSI; Ubuntu package often has stale SDK_MD5 (see sls-camera UBUNTU-SETUP.md)
-    if [[ -x /usr/sbin/kinect_fetch_fw ]] || apt-get install -y --no-install-recommends kinect-audio-setup 2>/dev/null; then
-      :
+  # Prefer already-seeded offline install (kinect-audio-setup in apt-packages.txt)
+  if ! dpkg -s kinect-audio-setup >/dev/null 2>&1; then
+    if [[ "${SLS_OFFLINE:-0}" == "1" ]]; then
+      apt-get install -y --no-install-recommends --no-download kinect-audio-setup wget 7zip 2>/dev/null || true
+    else
+      apt-get install -y --no-install-recommends --no-download kinect-audio-setup wget 7zip 2>/dev/null \
+        || { apt-get update -qq 2>/dev/null || true; apt-get install -y --no-install-recommends kinect-audio-setup wget 7zip || true; }
     fi
-    # Force-fetch with updated MD5 if script exists after partial install
+  fi
+  _sls_install_kinect_uac_file || true
+  # Network MSI recovery if firmware still missing and not forced offline
+  if [[ ! -f /lib/firmware/kinect/UACFirmware ]] && [[ "${SLS_OFFLINE:-0}" != "1" ]] && _sls_has_network; then
     if [[ -f /usr/sbin/kinect_fetch_fw ]]; then
       TMP=$(mktemp -d)
       (
         set +e
         cd "$TMP"
         URL="http://download.microsoft.com/download/F/9/9/F99791F2-D5BE-478A-B77A-830AD14950C3/KinectSDK-v1.0-beta2-x86.msi"
-        if command -v wget >/dev/null 2>&1; then
-          wget -q -O KinectSDK-v1.0-beta2-x86.msi "$URL" || true
-        elif command -v curl >/dev/null 2>&1; then
-          curl -fsSL -o KinectSDK-v1.0-beta2-x86.msi "$URL" || true
-        fi
+        wget -q -O KinectSDK-v1.0-beta2-x86.msi "$URL" 2>/dev/null \
+          || curl -fsSL -o KinectSDK-v1.0-beta2-x86.msi "$URL" 2>/dev/null || true
         if [[ -f KinectSDK-v1.0-beta2-x86.msi ]]; then
           ACTUAL=$(md5sum KinectSDK-v1.0-beta2-x86.msi | awk '{print $1}')
           sed -i "s/^SDK_MD5=.*/SDK_MD5=\"${ACTUAL}\"/" /usr/sbin/kinect_fetch_fw
-          apt-get install -y --no-install-recommends 7zip wget 2>/dev/null || true
           if command -v 7z >/dev/null 2>&1; then
             7z e -y -r KinectSDK-v1.0-beta2-x86.msi "UACFirmware.*" >/dev/null 2>&1 || true
             mkdir -p /lib/firmware/kinect
@@ -184,28 +197,24 @@ _sls_install_kinect_audio() {
       )
     fi
   fi
-  if dpkg -s kinect-audio-setup >/dev/null 2>&1; then
-    echo "Kinect audio package present (unplug/replug Kinect after reboot for UAC firmware)"
-    return 0
-  fi
+  dpkg --configure -a 2>/dev/null || true
   if [[ -f /lib/firmware/kinect/UACFirmware ]]; then
-    echo "Kinect UAC firmware file present under /lib/firmware/kinect/"
+    echo "Kinect UAC firmware ready — unplug/replug Kinect after reboot for mic"
     return 0
   fi
-  echo "WARN: Kinect audio setup incomplete — spectrum may use system default mic" >&2
-  echo "  See: https://github.com/tmdrake/sls-camera/blob/main/software/linux/docs/UBUNTU-SETUP.md" >&2
+  if dpkg -s kinect-audio-setup >/dev/null 2>&1; then
+    echo "WARN: kinect-audio-setup installed but UAC firmware missing (spectrum may use default mic)"
+    echo "  Build host: FETCH_KINECT_UAC=1 ./scripts/10-fetch-offline.sh  → vendor/kinect/UACFirmware"
+    return 1
+  fi
+  echo "WARN: Kinect audio incomplete — depth OK; spectrum uses default mic until fixed" >&2
   return 1
 }
 
-if [[ "${SLS_OFFLINE:-0}" == "1" ]]; then
-  echo "SLS_OFFLINE=1 — skipping kinect-audio-setup (MS firmware needs network)"
-elif [[ "${SLS_KINECT_AUDIO:-1}" == "0" || "${SLS_KINECT_AUDIO:-1}" == "false" ]]; then
-  echo "SLS_KINECT_AUDIO=0 — skipping kinect-audio-setup"
-elif ! _sls_has_network; then
-  echo "No network — skipping kinect-audio-setup (depth works without it; spectrum uses default mic)"
-  echo "  Later (with network): sudo apt install -y kinect-audio-setup && unplug/replug Kinect"
+if [[ "${SLS_KINECT_AUDIO:-1}" == "0" || "${SLS_KINECT_AUDIO:-1}" == "false" ]]; then
+  echo "SLS_KINECT_AUDIO=0 — skipping Kinect audio package/firmware"
 else
-  echo "Network available — installing kinect-audio-setup for Kinect mic / spectrum…"
+  echo "Installing Kinect audio (seed deb + vendor/kinect UAC if present)…"
   _sls_install_kinect_audio || true
 fi
 
@@ -446,5 +455,6 @@ echo "  Launcher: /usr/local/bin/sls-camera"
 echo "  Captures: $DATA_CAPTURES"
 echo "  User:     $SLS_USER (autostart enabled)"
 echo
-echo "Reboot, plug Kinect + power brick, and the SLS app should start."
-echo "Optional mic: sudo apt install kinect-audio-setup  (MS firmware — not bundled)"
+echo "Reboot, plug Kinect + power brick (operate 12V path), and the SLS app should start."
+echo "Kinect mic: installed when network was available (kinect-audio-setup); else spectrum uses default mic."
+echo "  Offline skip / re-run: SLS_OFFLINE=1 | with net: sudo apt install -y kinect-audio-setup && replug Kinect"

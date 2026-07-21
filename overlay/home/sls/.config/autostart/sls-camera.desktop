@@ -3,7 +3,8 @@ Type=Application
 Version=1.0
 Name=SLS Camera
 Comment=SLS field app (fullscreen)
-Exec=/usr/local/bin/sls-camera
+# Short delay so LXQt/DSI settle (blank-screen race on some boots)
+Exec=/bin/sh -c 'sleep 3; exec /usr/local/bin/sls-camera'
 Terminal=false
 X-GNOME-Autostart-enabled=true
 X-SLS-Camera-Firmware=1

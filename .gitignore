@@ -9,6 +9,7 @@ out/
 vendor/debs/
 vendor/wheels/
 vendor/models/
+vendor/kinect/
 vendor/sls-camera/
 vendor/*.tgz
 vendor/*.tar.*

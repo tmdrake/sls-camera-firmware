@@ -8,12 +8,20 @@
 # Note: Ubuntu 24.04+ uses t64 transition names (libfreenect0.5t64).
 # Older releases may use libfreenect0.5 — fetch script resolves both.
 
+# --- Kinect depth / IR / motor (app freenect path) — required offline ---
 freenect
 libfreenect-bin
 libfreenect0.5t64
 libfreenect-dev
+libusb-1.0-0
+# --- Spectrum / Record mic (app PortAudio) ---
 libportaudio2
 alsa-utils
+# Kinect USB Audio UAC loader (deb is free; MS firmware via fetch → vendor/kinect/, not git)
+# Installs offline when deb is in vendor/debs; firmware file optional private drop
+kinect-audio-setup
+wget
+7zip
 # DrakeVox / TTS (keep in sync with sls-camera software/linux/packages/apt-packages.txt)
 espeak-ng
 python3

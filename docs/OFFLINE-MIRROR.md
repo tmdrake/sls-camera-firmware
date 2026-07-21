@@ -89,7 +89,7 @@ plus wheels + model (total firmware tree often ~700 MB+).
 | **PyPI** | numpy, opencv, mediapipe, PySide6, sounddevice, imageio-ffmpeg | Same as `sls-camera` `viewer/requirements.txt` |
 | **Google MediaPipe model URL** | `pose_landmarker_lite.task` | Same URL as `viewer/run.sh` |
 | **Local fallback** | pose model copy from `~/sls-camera/.../models/` | Preferred when already on the build host |
-| **Microsoft Kinect UAC firmware** | — | **Not downloaded** (non-redistributable) |
+| **Microsoft Kinect UAC firmware** | `vendor/kinect/UACFirmware` | **Fetched by default** (`FETCH_KINECT_UAC=1`) into **gitignored** path; never commit; optional private field stick |
 
 If `python3 -m pip` is missing on the host, the fetch script uses **`uv`**, the **sls-camera viewer venv**, or bootstraps pip via **get-pip.py** (pypa.io). Prefer:
 
@@ -106,7 +106,7 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 | Ubuntu packages | OK under their licenses when redistributed carefully | Prefer documenting “run fetch on your mirror host” |
 | PyPI wheels | Follow each package license | |
 | MediaPipe model | Google terms for the model URL | Same as app `run.sh` |
-| **Kinect UAC audio firmware** | **Do not commit** | Microsoft non-redistributable; use `kinect-audio-setup` on-device or a **private** drop outside git |
+| **Kinect UAC audio firmware** | **Do not commit** | Microsoft non-redistributable; `10-fetch-offline.sh` can drop into `vendor/kinect/` for **private** offline sticks only |
 
 ## Refresh policy
 

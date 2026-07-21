@@ -83,7 +83,15 @@ expand_apt_deps() {
 # --- apt debs (seeds + recursive hard deps for true offline dpkg -i) ---
 # Set FETCH_DEPS=0 to download only packages/apt-packages.txt seeds (old behavior).
 FETCH_DEPS="${FETCH_DEPS:-1}"
+# Kinect audio: multiverse package + optional MS UAC blob into vendor/kinect/ (gitignored)
+FETCH_KINECT_UAC="${FETCH_KINECT_UAC:-1}"
 if command -v apt-get >/dev/null 2>&1; then
+  # kinect-audio-setup is in multiverse on Ubuntu
+  if [[ -f /etc/apt/sources.list ]] || compgen -G "/etc/apt/sources.list.d/*" >/dev/null; then
+    if ! apt-cache show kinect-audio-setup >/dev/null 2>&1; then
+      echo "NOTE: kinect-audio-setup not in apt cache — enable multiverse and apt-get update if you need Kinect mic offline"
+    fi
+  fi
   mapfile -t RAW < <(grep -vE '^\s*(#|$)' packages/apt-packages.txt || true)
   SEEDS=()
   for p in "${RAW[@]}"; do
@@ -292,11 +300,60 @@ else
   fi
 fi
 
+# --- Kinect UAC firmware (optional offline complete pack; NOT for public git) ---
+KINECT_DIR="$ROOT/vendor/kinect"
+mkdir -p "$KINECT_DIR"
+if [[ "$FETCH_KINECT_UAC" == "1" ]]; then
+  echo
+  echo "=== Kinect UAC audio firmware (private offline drop) ==="
+  if [[ -f "$KINECT_DIR/UACFirmware" ]]; then
+    echo "  already present: $KINECT_DIR/UACFirmware"
+  else
+    echo "  Fetching MS Kinect SDK Beta2 MSI (license: Microsoft) → extract UACFirmware…"
+    TMP=$(mktemp -d)
+    (
+      set +e
+      cd "$TMP"
+      URL="http://download.microsoft.com/download/F/9/9/F99791F2-D5BE-478A-B77A-830AD14950C3/KinectSDK-v1.0-beta2-x86.msi"
+      if command -v wget >/dev/null 2>&1; then
+        wget -q -O KinectSDK-v1.0-beta2-x86.msi "$URL"
+      elif command -v curl >/dev/null 2>&1; then
+        curl -fsSL -o KinectSDK-v1.0-beta2-x86.msi "$URL"
+      fi
+      if [[ ! -f KinectSDK-v1.0-beta2-x86.msi ]]; then
+        echo "  WARN: MSI download failed — offline Kinect mic needs manual vendor/kinect/UACFirmware"
+        exit 0
+      fi
+      md5sum KinectSDK-v1.0-beta2-x86.msi | tee "$KINECT_DIR/KinectSDK-v1.0-beta2-x86.msi.md5"
+      if command -v 7z >/dev/null 2>&1; then
+        7z e -y -r KinectSDK-v1.0-beta2-x86.msi "UACFirmware.*" >/dev/null
+      elif command -v 7za >/dev/null 2>&1; then
+        7za e -y -r KinectSDK-v1.0-beta2-x86.msi "UACFirmware.*" >/dev/null
+      else
+        echo "  WARN: install 7zip to extract UACFirmware (apt install 7zip)"
+        exit 0
+      fi
+      blob=$(ls UACFirmware* 2>/dev/null | head -1)
+      if [[ -n "$blob" ]]; then
+        cp -a "$blob" "$KINECT_DIR/UACFirmware"
+        chmod 644 "$KINECT_DIR/UACFirmware"
+        echo "  wrote $KINECT_DIR/UACFirmware (gitignored — private field packs only)"
+      else
+        echo "  WARN: no UACFirmware* in MSI — list with: 7z l KinectSDK-….msi"
+      fi
+    )
+    rm -rf "$TMP"
+  fi
+else
+  echo "FETCH_KINECT_UAC=0 — skipping MS UAC firmware (Kinect mic needs network on tablet or private drop)"
+fi
+
 echo
 echo "=== Offline fetch summary ==="
 echo "  debs:   $(find "$DEBS" -name '*.deb' 2>/dev/null | wc -l)"
 echo "  wheels: $(find "$WHEELS" -type f ! -name '.*' 2>/dev/null | wc -l)"
 echo "  model:  $( [[ -s "$MODEL_OUT" ]] && echo OK || echo MISSING )"
+echo "  kinect UAC: $( [[ -f "$KINECT_DIR/UACFirmware" ]] && echo OK || echo missing )"
 echo
-echo "Sources: Ubuntu apt + PyPI (app requirements) + MediaPipe model URL"
-echo "Not included: Microsoft Kinect UAC firmware (kinect-audio-setup separately)"
+echo "Sources: Ubuntu apt (incl. freenect + kinect-audio-setup deb) + PyPI + pose model"
+echo "MS UAC firmware: vendor/kinect/ only (gitignored). Do not commit."

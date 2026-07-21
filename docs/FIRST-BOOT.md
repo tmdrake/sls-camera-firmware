@@ -83,7 +83,8 @@ Operator should only need:
 |---------|--------|
 | Black screen / no app | `journalctl -b`, autostart desktop file, `DISPLAY` |
 | freenect BUSY | `lsmod \| grep gspca`; blacklist applied? |
-| Spectrum says **default** / not Kinect mic | Needs **network** install of `kinect-audio-setup` (MS firmware; not on public stick). Appliance install tries this when online. Then unplug/replug Kinect. |
+| Spectrum says **default** / not Kinect mic | Offline pack should include `kinect-audio-setup` deb + `vendor/kinect/UACFirmware` from fetch; unplug/replug Kinect. Rebuild stick if missing. |
+| **Blank screen** on some boots | Launcher waits for X + re-applies landscape; autostart delays 3s. If still blank: SSH, check `launcher.log`, restart `/usr/local/bin/sls-camera`. See [POWER-AND-DISPLAY.md](POWER-AND-DISPLAY.md). |
 | Spectrum silent | `libportaudio2`, Kinect USB Audio after firmware |
 
 ## Factory reset (Phase 3)

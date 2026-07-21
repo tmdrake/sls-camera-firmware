@@ -22,7 +22,8 @@
 - [x] App pin **6fed4e7** (Settings two-pane landscape; #6 geometry/scroll)  
 - [x] Installer-USB root stamp templates (`stamp-installer-usb.sh`)  
 - [ ] Test on real tablet  
-- [ ] Optional: one-shot kinect-audio-setup doc only (no MS blobs)  
+- [x] Kinect packages in offline seeds (`kinect-audio-setup` + freenect); UAC via `vendor/kinect/` fetch (gitignored)  
+- [x] Autostart blank-screen harden (wait for X, delay 3s, double landscape)
 
 ## Phase 2 — blow-and-go media
 

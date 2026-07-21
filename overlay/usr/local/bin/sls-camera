@@ -86,8 +86,24 @@ _relaunch() {
   exec /usr/local/bin/sls-camera "$@"
 }
 
+# Wait for X (blank-screen races: autostart before compositor/DSI ready)
+export DISPLAY="${DISPLAY:-:0}"
+if [[ -z "${WAYLAND_DISPLAY:-}" ]]; then
+  for _ in $(seq 1 40); do
+    if command -v xset >/dev/null 2>&1 && xset q >/dev/null 2>&1; then
+      break
+    fi
+    if command -v xrandr >/dev/null 2>&1 && xrandr >/dev/null 2>&1; then
+      break
+    fi
+    sleep 0.5
+  done
+fi
+
 # Fleet policy: lock landscape before app (native glass may be portrait — see sls-lock-landscape)
 if [[ -n "${DISPLAY:-}" ]] && [[ -x /usr/local/bin/sls-lock-landscape ]]; then
+  /usr/local/bin/sls-lock-landscape || true
+  sleep 0.5
   /usr/local/bin/sls-lock-landscape || true
 elif [[ -n "${DISPLAY:-}" ]] && command -v sls-lock-landscape >/dev/null 2>&1; then
   sls-lock-landscape || true
