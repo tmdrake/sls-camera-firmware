@@ -38,10 +38,27 @@
 5. **Kinect:** external brick + USB; after wipe, no VM passthrough script.  
 6. **Goodix touch:** first boot checklist item — if no touch, keyboard/SSH fallback.  
 
-## Phase 1 status
+## Linux driver reality (lab 2026-07)
 
-- Do **not** wipe until Stage A stick path is proven on a clean VM (`install-from-usb.sh`).  
-- When wiped: fill pass/fail for Settings, touch, Kinect, captures, power-off in #7.
+This unit **can** run the SLS appliance (Lubuntu 26.04, autologin, app, quit→poweroff, landscape), but **Cherry Trail + vendor ACPI** makes it a rough Linux citizen. Expect more “platform” pain than app bugs.
+
+| Area | Reality on this RCA |
+|------|---------------------|
+| **SLS app path** | Works once install + Kinect 12 V are right |
+| **Goodix touch** | **Intermittent** — I2C probe **-110**, soft rebind often fails; **cold power cycle**; keep USB mouse in lab — [TOUCH-GOODIX.md](../TOUCH-GOODIX.md) |
+| **Boot delay ~30 s** | Usually GRUB **recordfail** after hard off (fixed with `GRUB_RECORDFAIL_TIMEOUT=0`) — [EFI-BOOT.md](../EFI-BOOT.md); residual OEM EFI quirks possible |
+| **UEFI** | **ia32** GRUB on 32-bit firmware + amd64 OS — normal for this class, still fiddly |
+| **Kinect** | Not a tablet driver issue if only `02b0`; **12 V / charger path** — [kinect-portable-power.md](kinect-portable-power.md) |
+| **CPU / RAM** | Z8350 + **2 GB** — MediaPipe is CPU-bound; usable, not snappy — [PERFORMANCE.md](../PERFORMANCE.md) |
+| **Audio / SOF** | Journal noise (`sof-audio` no machine) — non-blocking for depth SLS |
+| **i2c / pinctrl** | Occasional designware timeouts, pinctrl probe errors — same generation as touch flakiness |
+
+**Takeaway for BOM:** fine as a **lab / wipe-load proving** tablet; for **production fleet**, prefer a better-supported SoC (e.g. N100-class) if driver tax stays high. Do not over-invest in Goodix/ACPI heroics on this chassis unless volume forces it.
+
+## Phase 1 / wipe status
+
+- **Wiped** Lubuntu 26.04 appliance (lab): boot → app → shutdown OK; touch/Kinect power are the main field risks.  
+- Fill pass/fail on [HARDWARE-MATRIX](https://github.com/tmdrake/sls-camera/blob/main/software/linux/docs/HARDWARE-MATRIX.md) / #7 as QA continues.
 
 ## Files
 
