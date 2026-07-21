@@ -47,7 +47,7 @@ Both are **Cherry Trail 2 GB slates** with portrait-native glass — firmware 
 
 1. Install **Lubuntu 26.04 amd64**, UEFI.  
 2. **2 GB RAM** — same caveats as tablet-01 (zram, light session).  
-3. **Landscape lock** — expect **1920×1200** after login; log geometry if Settings still clips (#6).  
+3. **Landscape lock** — **`right`** rotate + touch follow; expect **1920×1200** after login; log geometry if Settings still clips (#6).  
 4. **~29 GB** disk — full wipe, single OS, `/data/sls-captures`.  
 5. Kinect + portable power on hand (fleet kit).  
 

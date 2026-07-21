@@ -17,7 +17,8 @@
 - [x] Test on clean Lubuntu 26.04 VM (`--demo` smoke + screenshots)  
 - [x] SDDM autologin `sls` + Relogin=true  
 - [x] `SLS_CAPTURES_DIR` + quit exit-10 contracts (app pin 59ebee6)  
-- [x] Landscape lock for fleet tablets (`sls-lock-landscape` + mask iio-sensor-proxy)  
+- [x] Landscape lock for fleet tablets (`right` + touch CTM/map-to-output; mask iio-sensor-proxy)  
+- [x] Live session Wi‑Fi/SSH + rotate notes ([LIVE-SESSION.md](LIVE-SESSION.md))  
 - [x] App pin **6fed4e7** (Settings two-pane landscape; #6 geometry/scroll)  
 - [x] Installer-USB root stamp templates (`stamp-installer-usb.sh`)  
 - [ ] Test on real tablet  

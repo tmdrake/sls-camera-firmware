@@ -33,7 +33,7 @@
 
 1. **Install Lubuntu 26.04 amd64** (UEFI). Do not use i386 ISO.  
 2. **RAM 2 GB:** use lightweight session (already LXQt); consider `zram`; monitor OOM during pose.  
-3. **Landscape lock:** native glass is **800×1280** portrait; firmware forces **1280×800** via `sls-lock-landscape` (fleet policy — both tablets). Verify touch axes after first wipe.  
+3. **Landscape lock:** native glass is **800×1280** portrait; firmware forces **1280×800** via `sls-lock-landscape` with **`SLS_LANDSCAPE_ROTATE=right`** + touch CTM/map-to-output (live-validated fleet policy).  
 4. **~29 GB eMMC:** full-disk Lubuntu + `/opt/sls-camera` venv is OK; leave room for `/data/sls-captures`.  
 5. **Kinect:** external brick + USB; after wipe, no VM passthrough script.  
 6. **Goodix touch:** first boot checklist item — if no touch, keyboard/SSH fallback.  

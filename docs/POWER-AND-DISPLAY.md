@@ -43,21 +43,28 @@ Installed by `install-appliance.sh` from `overlay/`:
 
 | Piece | Role |
 |-------|------|
-| `/usr/local/bin/sls-lock-landscape` | For each connected X11 output: if height > width, `xrandr --rotate left` (then `right` if still portrait) |
+| `/usr/local/bin/sls-lock-landscape` | If height > width: `xrandr --rotate **right**` (fleet default; then `left` if still portrait) |
+| same script | Touch: `xinput map-to-output` + **Coordinate Transformation Matrix** for that rotation |
 | `etc/xdg/autostart/sls-lock-landscape.desktop` | Runs at LXQt login for user `sls` |
 | `sls-camera` launcher | Re-runs lock immediately before starting the app |
 | `systemctl mask iio-sensor-proxy` | Stops accelerometer auto-rotate from undoing landscape |
 
-Optional env: `SLS_LANDSCAPE_ROTATE=left|right` if a unit’s “up” is the wrong long edge (touch / bezel logo).
+| Env | Default | Role |
+|-----|---------|------|
+| `SLS_LANDSCAPE_ROTATE` | **`right`** | Preferred RandR rotate (live + fleet notes) |
+| `SLS_SKIP_TOUCH_MAP` | `0` | Set `1` to skip touch remap |
 
 ```bash
-# Manual check (guest or tablet X11)
+# Manual check (guest, live, or tablet X11)
+export SLS_LANDSCAPE_ROTATE=right   # fleet default
 /usr/local/bin/sls-lock-landscape
 xrandr | awk '/ connected/{print}'
-# expect width >= height on the active mode
+# expect width >= height; touch drag should match screen axes
 ```
 
-**Touch:** RandR rotation usually updates libinput’s coordinate matrix. After first wipe, verify drag directions; if inverted, try `SLS_LANDSCAPE_ROTATE=right` and re-login.
+**Touch:** Goodix / i2c-hid on Cherry Trail often **does not** follow RandR alone. The lock script sets CTM for `right` (`0 1 0 -1 0 1 0 0 1`) and `map-to-output`. If axes are still wrong, try `SLS_LANDSCAPE_ROTATE=left` and file a note on [#7](https://github.com/tmdrake/sls-camera/issues/7).
+
+Live session Wi‑Fi / SSH (lab): [LIVE-SESSION.md](LIVE-SESSION.md).
 
 ### Disable idle blank / suspend (session)
 

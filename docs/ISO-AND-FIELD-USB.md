@@ -32,8 +32,12 @@ Pure `dd` of the ISO is often **read-only** ISO9660 — stamp will fail; keep pa
 | Do | Don’t |
 |----|--------|
 | Explore Wi‑Fi, touch, disk size, UEFI | Expect `install-appliance` to persist on live |
+| Landscape **`right`** + touch map (see [LIVE-SESSION.md](LIVE-SESSION.md)) | Leave portrait if validating UI |
+| Lab: fix Wi‑Fi / enable SSH for remote scripts | Treat Wi‑Fi as a field product requirement |
 | Run **Install Lubuntu** → internal eMMC | Wipe the wrong disk |
 | After reboot to eMMC, run **SLS-MEDIA** install | Confuse installer stick with field USB |
+
+Wi‑Fi flaky on live? Phone tether or USB Ethernet, then `openssh-server` — full steps in **[LIVE-SESSION.md](LIVE-SESSION.md)**.
 
 ---
 

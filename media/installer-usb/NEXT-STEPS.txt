@@ -4,6 +4,8 @@ SLS — next steps after live / OS install
 A. Still in LIVE session only?
    - Use installer GUI → “Install Lubuntu” → internal disk.
    - Live root is RAM; field appliance install must run on the installed OS.
+   - Landscape: xrandr --rotate right + map touch (docs/LIVE-SESSION.md).
+   - Lab net/SSH: nmcli wifi / USB tether → apt install openssh-server.
 
 B. Lubuntu installed and rebooted to eMMC?
    1. Plug SLS-MEDIA (field USB built with 50-build-field-usb.sh).
