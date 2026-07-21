@@ -14,22 +14,24 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 TARGET="${1:-}"
 ISO_SRC="${ISO:-}"
 
-if [[ "$(id -u)" -ne 0 ]]; then
-  echo "Re-running with sudo…"
-  exec sudo -E env ISO="${ISO_SRC}" "$0" "$@"
-fi
-
 if [[ -z "$TARGET" ]]; then
   echo "Usage: $0 <mountpoint|/dev/sdXN>" >&2
   echo "  Example: $0 /dev/sda1" >&2
+  echo "  Example: $0 /run/media/\$USER/SLS-MEDIA" >&2
   exit 1
 fi
 
 # Resolve mountpoint
 MNT=""
+UNMOUNT_WHEN_DONE=0
 if [[ -d "$TARGET" ]]; then
   MNT="$TARGET"
+  # User-mounted FAT (udisks) is writable without root — only elevate for raw block devices
 elif [[ -b "$TARGET" ]]; then
+  if [[ "$(id -u)" -ne 0 ]]; then
+    echo "Re-running with sudo (block device)…"
+    exec sudo -E env ISO="${ISO_SRC}" "$0" "$@"
+  fi
   # safety: refuse nvme
   [[ "$TARGET" != *nvme* ]] || { echo "REFUSE nvme" >&2; exit 1; }
   udisksctl unmount -b "$TARGET" 2>/dev/null || umount "$TARGET" 2>/dev/null || true
@@ -39,6 +41,10 @@ elif [[ -b "$TARGET" ]]; then
   UNMOUNT_WHEN_DONE=1
 else
   echo "ERROR: not a directory or block device: $TARGET" >&2
+  exit 1
+fi
+if [[ ! -w "$MNT" ]]; then
+  echo "ERROR: mount not writable: $MNT (remount or use sudo on the block device)" >&2
   exit 1
 fi
 
@@ -71,7 +77,8 @@ if [[ "$AVAIL_MB" -lt "$NEED_MB" ]]; then
 fi
 
 # Clean previous payload (keep sls-captures)
-rm -rf "$MNT/firmware" "$MNT/optional" "$MNT/install-from-usb.sh" "$MNT/BOOTSTRAP.md"
+rm -rf "$MNT/firmware" "$MNT/optional" "$MNT/install-from-usb.sh" "$MNT/BOOTSTRAP.md" \
+  "$MNT/README-SLS.txt" "$MNT/SSH-LAB.txt"
 mkdir -p "$MNT/firmware" "$MNT/optional" "$MNT/sls-captures"
 
 echo "Copying firmware tree (excludes .git, large build caches)…"
@@ -123,19 +130,48 @@ echo "  firmware: $FW"
 cd "$FW"
 bash ./scripts/install-appliance.sh
 
-# Lab password reminder (operator should change on production)
+# Lab password (same as Phase 1 VM) — change on production
 if id sls &>/dev/null; then
+  echo 'sls:20260717' | chpasswd 2>/dev/null || true
   echo
-  echo "User sls exists. Lab default (change on real tablets):"
-  echo "  sudo passwd sls"
-  echo "  # documented lab: sls / 20260717"
+  echo "Lab password set for user sls: 20260717 (change on production)"
 fi
 
 echo
 echo "Done. Reboot; expect autologin as sls and SLS Camera."
 echo "Captures: /data/sls-captures  (and this stick's sls-captures/ if Auto + mounted)"
+echo "SSH (lab): see SSH-LAB.txt on this stick — install openssh-server once on network."
 INSTALL
 chmod +x "$MNT/install-from-usb.sh" 2>/dev/null || true
+
+# Lab SSH handoff (OptiPlex agent access) — not a field product requirement
+cat >"$MNT/SSH-LAB.txt" <<'SSHLAB'
+SLS lab tablet — SSH access (OptiPlex / agent)
+=============================================
+Password (lab, same as VM):  sls / 20260717
+  Temporary Lubuntu install user: use the same password if you created one.
+
+1) After Lubuntu is on eMMC (not live-only), get network (Wi-Fi, phone tether, or USB Ethernet).
+
+2) Install SSH (needs network once):
+     sudo apt update
+     sudo apt install -y openssh-server
+     sudo systemctl enable --now ssh
+
+3) Show IP for the build host:
+     ip -br a
+
+4) From OptiPlex:
+     ssh sls@TABLET_IP
+     # password: 20260717
+
+5) Then run appliance from this stick (if not done yet):
+     cd /media/$USER/SLS-MEDIA || cd /run/media/$USER/SLS-MEDIA
+     bash install-from-usb.sh
+     sudo reboot
+
+Test unit today: tablet-01 RCA W101AS23T2 + Kinect (portable PSU + USB).
+SSHLAB
 
 # Bootstrap doc
 cat >"$MNT/BOOTSTRAP.md" <<'BOOT'
@@ -147,6 +183,7 @@ cat >"$MNT/BOOTSTRAP.md" <<'BOOT'
 |------|---------|
 | `install-from-usb.sh` | One-shot appliance install (run after OS install) |
 | `firmware/` | Offline debs, wheels, model, pinned app, overlay |
+| `SSH-LAB.txt` | Lab SSH: openssh-server + `sls` / `20260717` |
 | `sls-captures/` | Investigation media (Auto captures when stick mounted) |
 | `optional/` | Lubuntu ISO if included (for Ventoy) |
 
@@ -159,9 +196,22 @@ Boot **Lubuntu 26.04 desktop** amd64 (same series as offline debs).
 - If `optional/lubuntu-*.iso` is on this stick, use **Ventoy** (or Rufus) so you can boot the ISO from the stick while keeping the data partition.
 - Or use a separate installer USB.
 
-Install to internal eMMC/SSD. Create any temporary admin user.
+Install to internal eMMC/SSD. Temp admin password (lab): **20260717**.
 
-### 2. Run appliance install
+**Today’s unit:** tablet-01 **RCA W101AS23T2** + Kinect (portable PSU + USB).
+
+### 2. Lab SSH (so build host / agent can help)
+
+See **`SSH-LAB.txt`**. Short version:
+
+```bash
+sudo apt update && sudo apt install -y openssh-server
+sudo systemctl enable --now ssh
+ip -br a
+# From OptiPlex: ssh sls@TABLET_IP   (password 20260717 after appliance)
+```
+
+### 3. Run appliance install
 
 ```bash
 # mount SLS-MEDIA if not auto-mounted
@@ -169,15 +219,15 @@ cd /media/$USER/SLS-MEDIA    # or /run/media/$USER/SLS-MEDIA
 bash install-from-usb.sh
 ```
 
-### 3. Reboot
+### 4. Reboot
 
 - Autologin: **sls**
-- Lab password (VM/docs only): **20260717** — change on production hardware
-- App should start; Quit powers off when app pin supports exit 10 + `SLS_QUIT_ACTION=shutdown`
+- Lab password: **20260717** — change on production hardware
+- App should start; Quit → power off (exit 10 + launcher)
 
-### 4. Kinect
+### 5. Kinect
 
-- Power brick + USB on the **tablet** (no VM passthrough script)
+- Power brick + USB on the **tablet** (no VM passthrough)
 - Optional mic: `sudo apt install kinect-audio-setup` (MS firmware; not on this stick)
 
 ## Rebuild this stick (on build host)
@@ -194,11 +244,13 @@ cat >"$MNT/README-SLS.txt" <<'EOF'
 SLS Camera — field USB (Stage A blow-and-go)
 ============================================
 1) Install Lubuntu 26.04 to the tablet (ISO in optional/ if present, or separate media).
-2) On the tablet, open this stick and run:  bash install-from-usb.sh
-3) Reboot. Login user: sls
+2) Lab SSH: see SSH-LAB.txt  (openssh-server; password sls / 20260717)
+3) On the tablet, open this stick and run:  bash install-from-usb.sh
+4) Reboot. Autologin: sls
 
 Details: BOOTSTRAP.md
 Captures folder: sls-captures/
+Test tablet today: RCA W101AS23T2 + Kinect
 EOF
 
 # Optional ISO
