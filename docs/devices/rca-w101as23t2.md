@@ -61,9 +61,22 @@ This unit **can** run the SLS appliance (Lubuntu 26.04, autologin, app, quit→p
 |-----|----------|
 | **Field investigations** | Kinect + tablet power are **not** via OTG; OTG not required for core SLS |
 | **Lab / this unit** | OTG **may** be used for **USB drive** (SLS-MEDIA / captures) and **external NIC** (SSH) |
-| **Touch risk** | Heavy **unpowered** hub loads on OTG can **kill Goodix** (I2C -110); unplug OTG restored touch (2026-07-21). Prefer **powered hub** if stacking stick + NIC + more |
+| **Hub** | Prefer **self-powered** hub so bus power is not drawn from the tablet |
+| **Touch risk** | Lab saw Goodix die with **unpowered** hub load; unplug restored touch. **Self-powered hub should not brown out rails** — if touch still dies, investigate role-switch / PMIC, not only hub power. |
+| **OTG “died”** | Separate from touch: check role=`host`, `lsusb`, dmesg xhci; not disabled by SLS harden/AutoRun. See notes below. |
 
-Lab layout that works when careful: **powered hub on OTG** → stick + Ethernet; keep Kinect on a stable host port/path with **operate 12 V**. If touch dies, shed OTG load first.
+### OTG USB death — debug checklist (lab)
+
+When OTG seems dead but “SLS USB” / other paths work:
+
+1. **Role:** `cat /sys/devices/pci0000:00/*/intel_xhci_usb_sw/usb_role/*/role` → expect **`host`** (not `device`/`none`).  
+2. **Enumerate:** plug stick directly into OTG (no hub) → `lsusb` / dmesg `new high-speed USB device`.  
+3. **Self-powered hub:** hub power **on** before tablet; then stick + NIC.  
+4. **Not our software:** harden does **not** mask `udisks2`/xhci; AutoRun only kills the **popup**.  
+5. **Cable / port:** OTG-capable cable if the jack needs ID pin; try another cable.  
+6. **Charge jack vs OTG:** dedicated 5 V charge path is separate; don’t confuse “not charging in UI” with OTG host death.  
+
+Lab snapshot (2026-07-21 ~16:39): role **host**, hub + Cruzer + RTL8153 + mouse **did** enumerate on `xhci` — OTG path was alive in that session.
 
 ### Charger plugs in → tablet powers on
 
