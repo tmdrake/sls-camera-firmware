@@ -128,8 +128,8 @@ sudo reboot
 **5. Kinect**
 
 - Power brick + USB on the **tablet** (operate **12 V** path — not charge-only).  
-- **Mic / spectrum:** `install-appliance` / `install-from-usb` installs **`kinect-audio-setup` when the target has network** (MS firmware not on the public stick). Offline installs keep depth-only; spectrum uses tablet default mic until you run `sudo apt install -y kinect-audio-setup` later and replug Kinect.  
-- Skip audio forever: `SLS_KINECT_AUDIO=0` or `SLS_OFFLINE=1`.
+- **Mic / spectrum:** seeds include **`kinect-audio-setup`** + freenect. Build host `10-fetch-offline.sh` also drops **MS UAC** into **`vendor/kinect/`** (gitignored) for private offline sticks. Public git still must not commit that blob.  
+- Skip audio: `SLS_KINECT_AUDIO=0`.
 
 ---
 
