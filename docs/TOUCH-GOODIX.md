@@ -30,6 +30,24 @@ Cherry Trail + Goodix over **i2c_designware**:
 - I2C bus busy/timeout during early boot or after power-state churn  
 - Intermittent: same image works, then next boot probe fails until **cold** power cycle  
 
+### Lab root cause (tablet-01 RCA, 2026-07-21) — **OTG USB load**
+
+**Confirmed:** with a **USB device on the OTG port** (hub + NIC in lab), Goodix was **dead** (I2C -110, no `xinput` device). **As soon as OTG USB was unplugged, touch worked** — no reboot required in that instance.
+
+| Likely mechanism | Why it fits |
+|------------------|-------------|
+| **Shared 5 V / power budget** | OTG hub + Ethernet dongle draw heavy current; touch rails brown out |
+| **OTG ID / role / PMIC path** | AXP288 + INT3496 USB-ID / role switching interacts with charge and peripherals |
+| **I2C / PUNIT power domains** | Bus runtime-suspend + failed Goodix probe when rails dip |
+
+**Field / lab rule for this RCA:**
+
+1. Prefer **empty OTG** when using the touchscreen.  
+2. Put hub / NIC / heavy peripherals on a **powered hub** or another host — not the tablet OTG if touch is required.  
+3. Kinect **data** on a dedicated port if the unit has more than one; avoid stacking Kinect + hub + NIC on one OTG tree.  
+4. If touch dies mid-session: **unplug OTG USB first**, then recheck `xinput` / finger — before cold reboot.  
+5. Soft `sls-touch-rebind` is secondary; **remove OTG load** is the first fix.
+
 ## Recovery (try in order)
 
 1. **Soft rebind** (sometimes works if chip woke later):
