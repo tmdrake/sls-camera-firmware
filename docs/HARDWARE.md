@@ -29,7 +29,7 @@
 | Native Windows msinfo (pre-lock) | **800×1280** / **1200×1920** | Portrait glass — firmware rotates at session start |
 | Short / old panels | **1024×600** | Risk: Settings rows clip without scroll |
 
-App depth canvas is **1280×720** composite; that fits 800p landscape. **Settings** still needs scroll/clamp on short heights ([#6](https://github.com/tmdrake/sls-camera/issues/6)).
+App depth canvas is **1280×720** composite; that fits 800p landscape. **Settings** is two-pane 16:10 ([#6](https://github.com/tmdrake/sls-camera/issues/6)); VM QA still notes **minor left-pane scroll** — app may shrink left-pane buttons slightly ([#7](https://github.com/tmdrake/sls-camera/issues/7)).
 
 **App / field tracking:**
 
