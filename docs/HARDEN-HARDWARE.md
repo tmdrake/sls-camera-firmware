@@ -41,6 +41,7 @@ Disable or mask **services and modules we do not use**, not “break Kinect.”
 | iio-sensor-proxy (auto-rotate) | masked |
 | gspca_kinect | modprobe blacklist |
 | logind suspend | ignore |
+| USB/SD **AutoRun popup** | pcmanfm-qt `AutoRun=false` (mount kept on) — [KIOSK-DESKTOP.md](KIOSK-DESKTOP.md) |
 
 ## Implement (script)
 

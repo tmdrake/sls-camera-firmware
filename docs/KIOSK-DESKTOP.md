@@ -25,6 +25,7 @@ No stock desktop chrome, no second admin user, no “explore the OS” surface.
 | No suspend / DPMS | logind + `sls-disable-dpms` |
 | App autostart | `~/.config/autostart/sls-camera.desktop` |
 | Landscape lock | `sls-lock-landscape` |
+| **No USB AutoRun popup** | pcmanfm-qt `[Volume] AutoRun=false` (still **MountRemovable=true** for Captures) |
 
 ## Still to do (Phase 3 harden)
 

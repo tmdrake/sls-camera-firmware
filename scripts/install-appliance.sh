@@ -381,6 +381,15 @@ if [[ -f "$OVERLAY/home/sls/.config/lxqt/lxqt-powermanagement.conf" ]]; then
   install -D -m 644 "$OVERLAY/home/sls/.config/lxqt/lxqt-powermanagement.conf" \
     "$USER_HOME/.config/lxqt/lxqt-powermanagement.conf"
 fi
+# pcmanfm-qt: automount USB/SD without “open volume” AutoRun popup (Captures Auto still works)
+if [[ -f "$OVERLAY/home/sls/.config/pcmanfm-qt/lxqt/settings.conf" ]]; then
+  install -D -m 644 "$OVERLAY/home/sls/.config/pcmanfm-qt/lxqt/settings.conf" \
+    "$USER_HOME/.config/pcmanfm-qt/lxqt/settings.conf"
+fi
+if [[ -f "$OVERLAY/etc/xdg/xdg-Lubuntu/pcmanfm-qt/lxqt/settings.conf" ]]; then
+  install -D -m 644 "$OVERLAY/etc/xdg/xdg-Lubuntu/pcmanfm-qt/lxqt/settings.conf" \
+    /etc/xdg/xdg-Lubuntu/pcmanfm-qt/lxqt/settings.conf
+fi
 # User-level Hidden=true overrides for update/power autostart (belt + suspenders)
 for f in lubuntu-update-autostart.desktop lxqt-powermanagement.desktop lxqt-xscreensaver-autostart.desktop; do
   cat >"$USER_HOME/.config/autostart/$f" <<'EOF'
