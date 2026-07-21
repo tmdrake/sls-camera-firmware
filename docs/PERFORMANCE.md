@@ -19,7 +19,7 @@ Cherry Trail is dual/quad low-power Atom (~1.4–1.9 GHz). Expect MediaPipe po
 |-----------|-------------------|--------|
 | **Qt / OpenGL ES** | Mesa **Intel HD Graphics (CHV)** | Real tablet GL — *not* software llvmpipe (VM uses llvmpipe) |
 | **Depth/IR capture** | freenect over USB | Limited by USB + Kinect power, not GPU |
-| **Pose (MediaPipe)** | **CPU + XNNPACK** | Main cost; Linux GPU delegates on this Intel gen are rarely a win |
+| **Pose (MediaPipe)** | **CPU + XNNPACK** | Main cost; **not** in Kinect/freenect API (Windows SDK had skeleton in-runtime — app team follow-up in `sls-camera` TODO) |
 | **App target rate** | ~**20 FPS** (`target_fps` in viewer config) | Composite / record path; pose may not hit every frame on 2 GB |
 
 Do not expect CUDA, modern OpenVINO NPU, or high-end VAAPI pipelines on Z83x0.
