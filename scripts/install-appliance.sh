@@ -281,7 +281,19 @@ fi
 # Stop accelerometer-driven auto-rotate fighting landscape lock (tablet-01/02)
 systemctl disable --now iio-sensor-proxy.service 2>/dev/null || true
 systemctl mask iio-sensor-proxy.service 2>/dev/null || true
-echo "Disabled auto-updates + power/screensaver; DPMS off + landscape lock installed"
+# Phase 3 harden: drop unused HW services (BT, modem, cups, …) — keep NetworkManager
+if [[ -f "$OVERLAY/etc/sls/harden-hw.conf" ]]; then
+  install -D -m 644 "$OVERLAY/etc/sls/harden-hw.conf" /etc/sls/harden-hw.conf
+fi
+if [[ -f "$OVERLAY/usr/local/bin/sls-disable-unused-hw" ]]; then
+  install -D -m 755 "$OVERLAY/usr/local/bin/sls-disable-unused-hw" /usr/local/bin/sls-disable-unused-hw
+  if [[ "${SLS_HARDEN_HW:-1}" != "0" ]]; then
+    /usr/local/bin/sls-disable-unused-hw || true
+  else
+    echo "SLS_HARDEN_HW=0 — skipped unused-hardware disable"
+  fi
+fi
+echo "Disabled auto-updates + power/screensaver; DPMS off + landscape lock + unused HW harden"
 
 # --- app tree ---
 echo "Installing app → $APP_ROOT"

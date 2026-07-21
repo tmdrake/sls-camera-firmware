@@ -1,0 +1,98 @@
+#!/usr/bin/env bash
+# Disable unused services/hardware for SLS field kiosk (Phase 3 harden).
+# Safe defaults: keep NetworkManager; drop BT/modem/print/crash noise.
+# Config: /etc/sls/harden-hw.conf
+set -u
+
+CONF=/etc/sls/harden-hw.conf
+DISABLE_BLUETOOTH=1
+DISABLE_MODEM=1
+DISABLE_CUPS=1
+DISABLE_AVAHI=1
+DISABLE_APPORT=1
+DISABLE_FWUPD=1
+DISABLE_THERMALD=1
+DISABLE_SPICE_VDAGENT=1
+DISABLE_NETWORKMANAGER=0
+
+if [[ -f "$CONF" ]]; then
+  # shellcheck disable=SC1090
+  source "$CONF" || true
+fi
+
+LOG=/data/sls-captures/harden-hw.log
+if [[ ! -d "$(dirname "$LOG")" ]]; then
+  LOG=/var/log/sls-harden-hw.log
+fi
+_log() {
+  local line="[$(date -Iseconds 2>/dev/null || date)] $*"
+  echo "$line" | tee -a "$LOG" 2>/dev/null || echo "$line"
+}
+
+if [[ "$(id -u)" -ne 0 ]]; then
+  echo "Run as root" >&2
+  exit 1
+fi
+
+_mask() {
+  local u
+  for u in "$@"; do
+    systemctl disable --now "$u" 2>/dev/null || true
+    systemctl mask "$u" 2>/dev/null || true
+    _log "masked $u"
+  done
+}
+
+_disable() {
+  local u
+  for u in "$@"; do
+    systemctl disable --now "$u" 2>/dev/null || true
+    _log "disabled $u"
+  done
+}
+
+_log "sls-disable-unused-hw start"
+
+if [[ "${DISABLE_BLUETOOTH}" == "1" ]]; then
+  _mask bluetooth.service
+  _disable bluetooth.service
+fi
+if [[ "${DISABLE_MODEM}" == "1" ]]; then
+  _mask ModemManager.service
+fi
+if [[ "${DISABLE_CUPS}" == "1" ]]; then
+  _mask cups.service cups.socket cups.path cups-browsed.service 2>/dev/null || true
+  _mask cups.service cups-browsed.service
+fi
+if [[ "${DISABLE_AVAHI}" == "1" ]]; then
+  _disable avahi-daemon.service avahi-daemon.socket 2>/dev/null || true
+  _mask avahi-daemon.service avahi-daemon.socket 2>/dev/null || true
+fi
+if [[ "${DISABLE_APPORT}" == "1" ]]; then
+  _disable apport.service apport-autoreport.path whoopsie.service whoopsie.path 2>/dev/null || true
+  _mask apport.service whoopsie.service 2>/dev/null || true
+fi
+if [[ "${DISABLE_FWUPD}" == "1" ]]; then
+  _disable fwupd.service fwupd-refresh.service fwupd-refresh.timer 2>/dev/null || true
+fi
+if [[ "${DISABLE_THERMALD}" == "1" ]]; then
+  _disable thermald.service 2>/dev/null || true
+fi
+if [[ "${DISABLE_SPICE_VDAGENT}" == "1" ]]; then
+  _disable spice-vdagent.service 2>/dev/null || true
+  # user unit on some images
+  systemctl --global disable spice-vdagent 2>/dev/null || true
+fi
+if [[ "${DISABLE_NETWORKMANAGER}" == "1" ]]; then
+  _log "WARN: DISABLE_NETWORKMANAGER=1 — lab SSH/Wi‑Fi may break"
+  _disable NetworkManager.service 2>/dev/null || true
+fi
+
+# Blacklist modules we never want for Kinect conflict (already done for gspca)
+if [[ ! -f /etc/modprobe.d/blacklist-gspca-kinect.conf ]]; then
+  echo "blacklist gspca_kinect" >/etc/modprobe.d/blacklist-gspca-kinect.conf
+  _log "wrote gspca_kinect blacklist"
+fi
+
+_log "sls-disable-unused-hw done"
+echo "Unused hardware services masked/disabled (see $LOG / docs/HARDEN-HARDWARE.md)"

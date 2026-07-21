@@ -33,6 +33,7 @@ No stock desktop chrome, no second admin user, no “explore the OS” surface.
 - [ ] **Wallpaper / empty desktop** — dark or branded; no default Lubuntu art ([BRANDING.md](BRANDING.md))  
 - [ ] **Remove install-time users** — only `sls` (see [VM-REBUILD.md](VM-REBUILD.md))  
 - [ ] **Disable leftover applets** — network tray optional for lab only; Bluetooth/print/update off for field  
+- [x] **Disable unused system services/HW** — [HARDEN-HARDWARE.md](HARDEN-HARDWARE.md) (`sls-disable-unused-hw`)
 - [ ] **Lock down escape hatches** — Ctrl+Alt+T / virtual terminals policy for production (lab keeps SSH)  
 - [ ] **Boot → app latency** — reduce session startup so desktop never “settles” before SLS  
 - [ ] **Document lab vs field** — lab may keep a thin panel for debug; field image does not  

@@ -45,11 +45,13 @@
 - [ ] **EFI / boot reliability** — remaining: OEM firmware USB probe, wrong boot device; see [EFI-BOOT.md](EFI-BOOT.md)  
 - [x] **Goodix touch + OTG power** (tablet-01) — I2C -110 when OTG loaded (hub/NIC); **unplug OTG restores touch** (2026-07-21); doc [TOUCH-GOODIX.md](TOUCH-GOODIX.md); optional later: warn/udev note if OTG device present  
 - [x] **Charge-idle poweroff** — 15 min sustained charge → poweroff (RCA dedicated charger / unattended); conf off for OTG-run tablets — [CHARGE-IDLE-POWEROFF.md](CHARGE-IDLE-POWEROFF.md)
+- [x] **Disable unused OS hardware/services** — BT, modem, cups, apport, fwupd, thermald noise; conf in `/etc/sls/harden-hw.conf` — [HARDEN-HARDWARE.md](HARDEN-HARDWARE.md)  
 - [ ] **Kiosk desktop cleanup** — strip stock Lubuntu/LXQt chrome (see [KIOSK-DESKTOP.md](KIOSK-DESKTOP.md))  
   - [ ] Hide/remove panel, desktop icons, file-manager desktop, noisy applets  
   - [ ] Minimal or single-app session (boot → SLS, not full desktop playground)  
   - [ ] Drop leftover install users; field image = user `sls` only  
   - [ ] Lab vs field profile (SSH/debug OK in lab; locked-down field image)  
+  - [ ] Blacklist/disable more tablet-only drivers if unused (speakers SOF, etc.) after field QA
 - [ ] **Branding / splash / bootscreens** — production look (see [BRANDING.md](BRANDING.md))  
   - [ ] App: `SLS_PRODUCT_NAME` + splash image/text (coord with `sls-camera` TODO)  
   - [ ] Firmware: `branding/` pack + launcher env; optional wallpaper  
