@@ -54,7 +54,7 @@ Document which physical cable/PSU mode is “charge” vs “run” on the kit l
 
 ```bash
 lsusb | grep 045e
-# expect motor + camera (+ audio)
+# expect motor + camera (+ audio) — if only 02b0, fix 12V power (see legacy charger note)
 # gspca should stay blacklisted (appliance install)
 ```
 

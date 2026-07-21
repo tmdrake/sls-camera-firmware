@@ -42,13 +42,11 @@ Cherry Trail + Goodix over **i2c_designware**:
 | **OTG ID / role / PMIC path** | AXP288 + INT3496 USB-ID / role switching interacts with charge and peripherals |
 | **I2C / PUNIT power domains** | Bus runtime-suspend + failed Goodix probe when rails dip |
 
-**Field / lab rule for this RCA:**
+**If lab debug uses OTG on this RCA:**
 
-1. Prefer **empty OTG** when using the touchscreen.  
-2. Put hub / NIC / heavy peripherals on a **powered hub** or another host — not the tablet OTG if touch is required.  
-3. Kinect **data** on a dedicated port if the unit has more than one; avoid stacking Kinect + hub + NIC on one OTG tree.  
-4. If touch dies mid-session: **unplug OTG USB first**, then recheck `xinput` / finger — before cold reboot.  
-5. Soft `sls-touch-rebind` is secondary; **remove OTG load** is the first fix.
+1. Expect touch to die under hub/NIC load; **unplug OTG** before chasing drivers.  
+2. Prefer powered hub / another host for Ethernet debug.  
+3. Soft `sls-touch-rebind` is secondary to removing OTG load.
 
 ## Recovery (try in order)
 

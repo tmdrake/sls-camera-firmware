@@ -55,6 +55,14 @@ This unit **can** run the SLS appliance (Lubuntu 26.04, autologin, app, quit→p
 
 **Takeaway for BOM:** fine as a **lab / wipe-load proving** tablet; for **production fleet**, prefer a better-supported SoC (e.g. N100-class) if driver tax stays high. Do not over-invest in Goodix/ACPI heroics on this chassis unless volume forces it.
 
+### OTG port (this unit only — not normal field use)
+
+**Field kit does not use the OTG/USB host port** for SLS (Kinect + power are separate). Keep this as a **lab gotcha** only:
+
+- Loading OTG with a **hub / Ethernet dongle / heavy bus-powered gear** can brown out rails and **kill Goodix touch** (I2C timeout).  
+- Unplugging OTG restored touch immediately in lab (2026-07-21).  
+- If someone plugs lab debug gear into OTG and touch dies: remove that USB first.
+
 ## Phase 1 / wipe status
 
 - **Wiped** Lubuntu 26.04 appliance (lab): boot → app → shutdown OK; touch/Kinect power are the main field risks.  
