@@ -1,0 +1,15 @@
+[Unit]
+Description=SLS: power off after sustained charging (unattended charge / RCA dedicated charger)
+After=multi-user.target
+ConditionPathExists=/usr/local/bin/sls-charge-idle-poweroff
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/sls-charge-idle-poweroff
+Restart=on-failure
+RestartSec=60
+# Runs as root so poweroff works without relying on session
+User=root
+
+[Install]
+WantedBy=multi-user.target

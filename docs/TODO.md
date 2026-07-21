@@ -42,7 +42,8 @@
 - [ ] **Performance** — expectations + zram/governor/pose tips ([PERFORMANCE.md](PERFORMANCE.md)); optional field-lite pose  
 - [x] **GRUB 30s “EFI” delay** — `recordfail` after hard power-off; `GRUB_RECORDFAIL_TIMEOUT=0` in install-appliance + [EFI-BOOT.md](EFI-BOOT.md) (tablet-01 2026-07-21)  
 - [ ] **EFI / boot reliability** — remaining: OEM firmware USB probe, wrong boot device; see [EFI-BOOT.md](EFI-BOOT.md)  
-- [x] **Goodix touch + OTG power** (tablet-01) — I2C -110 when OTG loaded (hub/NIC); **unplug OTG restores touch** (2026-07-21); doc [TOUCH-GOODIX.md](TOUCH-GOODIX.md); optional later: warn/udev note if OTG device present
+- [x] **Goodix touch + OTG power** (tablet-01) — I2C -110 when OTG loaded (hub/NIC); **unplug OTG restores touch** (2026-07-21); doc [TOUCH-GOODIX.md](TOUCH-GOODIX.md); optional later: warn/udev note if OTG device present  
+- [x] **Charge-idle poweroff** — 15 min sustained charge → poweroff (RCA dedicated charger / unattended); conf off for OTG-run tablets — [CHARGE-IDLE-POWEROFF.md](CHARGE-IDLE-POWEROFF.md)
 - [ ] **Kiosk desktop cleanup** — strip stock Lubuntu/LXQt chrome (see [KIOSK-DESKTOP.md](KIOSK-DESKTOP.md))  
   - [ ] Hide/remove panel, desktop icons, file-manager desktop, noisy applets  
   - [ ] Minimal or single-app session (boot → SLS, not full desktop playground)  

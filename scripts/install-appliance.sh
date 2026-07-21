@@ -172,6 +172,21 @@ fi
 if [[ -f "$OVERLAY/usr/local/bin/sls-lock-landscape" ]]; then
   install -D -m 755 "$OVERLAY/usr/local/bin/sls-lock-landscape" /usr/local/bin/sls-lock-landscape
 fi
+# Charge-idle poweroff: RCA dedicated charger / unattended charge (see CHARGE-IDLE-POWEROFF.md)
+if [[ -f "$OVERLAY/usr/local/bin/sls-charge-idle-poweroff" ]]; then
+  install -D -m 755 "$OVERLAY/usr/local/bin/sls-charge-idle-poweroff" \
+    /usr/local/bin/sls-charge-idle-poweroff
+fi
+if [[ -f "$OVERLAY/etc/sls/charge-idle.conf" ]]; then
+  install -D -m 644 "$OVERLAY/etc/sls/charge-idle.conf" /etc/sls/charge-idle.conf
+fi
+if [[ -f "$OVERLAY/etc/systemd/system/sls-charge-idle-poweroff.service" ]]; then
+  install -D -m 644 "$OVERLAY/etc/systemd/system/sls-charge-idle-poweroff.service" \
+    /etc/systemd/system/sls-charge-idle-poweroff.service
+  systemctl daemon-reload 2>/dev/null || true
+  systemctl enable --now sls-charge-idle-poweroff.service 2>/dev/null || true
+  echo "Enabled sls-charge-idle-poweroff (15 min sustained charge → poweroff; disable for OTG-run tablets)"
+fi
 # Stop accelerometer-driven auto-rotate fighting landscape lock (tablet-01/02)
 systemctl disable --now iio-sensor-proxy.service 2>/dev/null || true
 systemctl mask iio-sensor-proxy.service 2>/dev/null || true
