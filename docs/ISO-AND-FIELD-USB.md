@@ -127,8 +127,9 @@ sudo reboot
 
 **5. Kinect**
 
-- Power brick + USB on the **tablet** (no VM passthrough).  
-- Optional mic: `sudo apt install kinect-audio-setup` (MS firmware; **not** on the stick).  
+- Power brick + USB on the **tablet** (operate **12 V** path — not charge-only).  
+- **Mic / spectrum:** `install-appliance` / `install-from-usb` installs **`kinect-audio-setup` when the target has network** (MS firmware not on the public stick). Offline installs keep depth-only; spectrum uses tablet default mic until you run `sudo apt install -y kinect-audio-setup` later and replug Kinect.  
+- Skip audio forever: `SLS_KINECT_AUDIO=0` or `SLS_OFFLINE=1`.
 
 ---
 

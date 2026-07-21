@@ -83,6 +83,7 @@ Operator should only need:
 |---------|--------|
 | Black screen / no app | `journalctl -b`, autostart desktop file, `DISPLAY` |
 | freenect BUSY | `lsmod \| grep gspca`; blacklist applied? |
+| Spectrum says **default** / not Kinect mic | Needs **network** install of `kinect-audio-setup` (MS firmware; not on public stick). Appliance install tries this when online. Then unplug/replug Kinect. |
 | Spectrum silent | `libportaudio2`, Kinect USB Audio after firmware |
 
 ## Factory reset (Phase 3)
