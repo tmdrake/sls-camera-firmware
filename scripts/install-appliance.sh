@@ -186,8 +186,12 @@ rsync -a --delete \
   --exclude 'software/linux/viewer/captures' \
   "$SRC/" "$APP_ROOT/"
 
-# pose model offline
+# Field USB is FAT32 — +x is lost on the stick; force scripts executable on target
 VIEWER="$APP_ROOT/software/linux/viewer"
+find "$APP_ROOT" -type f -name '*.sh' -exec chmod 755 {} \; 2>/dev/null || true
+chmod 755 "$VIEWER/run.sh" 2>/dev/null || true
+
+# pose model offline
 mkdir -p "$VIEWER/models"
 if [[ -f "$ROOT/vendor/models/pose_landmarker_lite.task" ]]; then
   install -m 644 "$ROOT/vendor/models/pose_landmarker_lite.task" \

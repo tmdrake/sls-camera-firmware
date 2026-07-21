@@ -33,9 +33,16 @@ export SLS_QUIT_ACTION="${SLS_QUIT_ACTION:-shutdown}"
 
 APP_ROOT="${SLS_APP_ROOT:-/opt/sls-camera}"
 VIEWER="${APP_ROOT}/software/linux/viewer"
-if [[ ! -x "${VIEWER}/run.sh" ]]; then
+# FAT32 field-USB installs often drop +x; repair before launch
+if [[ -f "${VIEWER}/run.sh" && ! -x "${VIEWER}/run.sh" ]]; then
+  chmod +x "${VIEWER}/run.sh" 2>/dev/null || true
+fi
+if [[ ! -f "${VIEWER}/run.sh" ]]; then
   _log "ERROR: SLS Camera not installed at ${VIEWER}"
   exit 1
+fi
+if [[ ! -x "${VIEWER}/run.sh" ]]; then
+  _log "WARN: run.sh not executable — launching via bash"
 fi
 
 readonly SLS_EXIT_OK=0
@@ -102,7 +109,11 @@ fi
 cd "${VIEWER}"
 _log "starting run.sh args=$* SLS_ON_QUIT=${SLS_ON_QUIT} FALLBACK=${SLS_QUIT_FALLBACK} SLS_QUIT_ACTION=${SLS_QUIT_ACTION:-}"
 set +e
-./run.sh "$@"
+if [[ -x ./run.sh ]]; then
+  ./run.sh "$@"
+else
+  bash ./run.sh "$@"
+fi
 code=$?
 set +e
 
