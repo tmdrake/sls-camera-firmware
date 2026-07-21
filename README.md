@@ -31,7 +31,7 @@ The **application source of truth** remains **`sls-camera`**. This repo is packa
 | **0** | Repo scaffold, docs, offline fetch + app sync scripts | **Done** (recursive offline debs) |
 | **1** | `install-appliance.sh` on a blank Ubuntu/Lubuntu install (offline) | **Proven on Lubuntu 26.04 VM** (`--demo` smoke) |
 | **2** | Blow-and-go media: **Stage A field USB** now; single ISO later | **Stage A scripts ready** |
-| **3** | Harden: `/data`, power, **kiosk desktop cleanup**, branding/splash | Later — [KIOSK-DESKTOP.md](docs/KIOSK-DESKTOP.md) · [BRANDING.md](docs/BRANDING.md) |
+| **3** | Harden: `/data`, power, kiosk desktop, branding, **performance**, EFI reliability | Later — [KIOSK-DESKTOP.md](docs/KIOSK-DESKTOP.md) · [BRANDING.md](docs/BRANDING.md) · [PERFORMANCE.md](docs/PERFORMANCE.md) |
 
 ### Screenshots (Phase 1 VM)
 

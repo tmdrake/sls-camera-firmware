@@ -31,6 +31,8 @@
 
 App depth canvas is **1280×720** composite; that fits 800p landscape. **Settings** is two-pane 16:10 ([#6](https://github.com/tmdrake/sls-camera/issues/6)); VM QA still notes **minor left-pane scroll** — app may shrink left-pane buttons slightly ([#7](https://github.com/tmdrake/sls-camera/issues/7)).
 
+**CPU / FPS:** Cherry Trail 2 GB is the budget field class — see [PERFORMANCE.md](PERFORMANCE.md) (Intel GL OK; MediaPipe is CPU-bound; upgrade path N100-class).
+
 **App / field tracking:**
 
 - [sls-camera#6](https://github.com/tmdrake/sls-camera/issues/6) — log geometry + Settings scroll/clamp  

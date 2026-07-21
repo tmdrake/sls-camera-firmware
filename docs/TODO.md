@@ -39,6 +39,8 @@
 - [ ] Power: inhibit suspend while app running (app #9 wake lock exists; host policy already partial)  
 - [ ] Factory reset flow  
 - [ ] Signed release artifacts / version stamp  
+- [ ] **Performance** — expectations + zram/governor/pose tips ([PERFORMANCE.md](PERFORMANCE.md)); optional field-lite pose  
+- [ ] **EFI / boot reliability** — intermittent firmware boot issues on tablets (order, media vs eMMC, after power cycle); diagnose when easy to repro  
 - [ ] **Kiosk desktop cleanup** — strip stock Lubuntu/LXQt chrome (see [KIOSK-DESKTOP.md](KIOSK-DESKTOP.md))  
   - [ ] Hide/remove panel, desktop icons, file-manager desktop, noisy applets  
   - [ ] Minimal or single-app session (boot → SLS, not full desktop playground)  
