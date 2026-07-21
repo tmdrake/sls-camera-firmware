@@ -107,16 +107,36 @@ cd /media/$USER/SLS-MEDIA
 bash install-from-usb.sh
 ```
 
-This runs `firmware/scripts/install-appliance.sh` (offline debs/wheels/app).
+This runs `firmware/scripts/install-appliance.sh` (offline debs/wheels/app + Kinect audio when available).
 
-**3. Lab user (documented for rebuilds only)**
+**3. Kinect audio (required for spectrum / Record mic — not optional for field audio)**
+
+Depth works with freenect alone. **Spectrum + Record audio** need the Microsoft **UAC** firmware on the Kinect audio device.
+
+| Build / install path | What to do |
+|----------------------|------------|
+| **Full offline stick** (recommended) | On build host: `./scripts/10-fetch-offline.sh` (includes `kinect-audio-setup` deb + **`vendor/kinect/UACFirmware`**, gitignored). `install-from-usb` / `install-appliance` installs both. |
+| **Deb only, no UAC file** | Package may install but mic still missing → run: `sudo ./scripts/install-kinect-audio-on-target.sh` (or place `UACFirmware` under `vendor/kinect/`). |
+| **Tablet has network** | `sudo apt install -y kinect-audio-setup` then unplug/replug Kinect (or use `install-kinect-audio-on-target.sh`). |
+| **Skip audio forever** | `SLS_KINECT_AUDIO=0` — app falls back to system **default** mic. |
+
+**After any audio install:** unplug/replug Kinect USB (operate **12 V** power on), then:
+
+```bash
+arecord -l
+# expect a Kinect / USB Audio capture device — not only "default" in the app spectrum
+```
+
+Restart SLS Camera. Spectrum should show a Kinect-ish device name, not only `default`.
+
+**4. Lab user (documented for rebuilds only)**
 
 ```bash
 echo 'sls:20260717' | sudo chpasswd   # change on production tablets
 sudo reboot
 ```
 
-**4. After reboot**
+**5. After reboot**
 
 | Expect | |
 |--------|--|
@@ -124,12 +144,12 @@ sudo reboot
 | App | SLS Camera starts |
 | Quit | Power off (app exit 10 + launcher) |
 | Captures | `/data/sls-captures` and/or stick `sls-captures/` if Auto + mounted |
+| Spectrum / REC mic | Kinect array if step **3** completed; else tablet default mic |
 
-**5. Kinect**
+**6. Kinect sensor (depth)**
 
-- Power brick + USB on the **tablet** (operate **12 V** path — not charge-only).  
-- **Mic / spectrum:** seeds include **`kinect-audio-setup`** + freenect. Build host `10-fetch-offline.sh` also drops **MS UAC** into **`vendor/kinect/`** (gitignored) for private offline sticks. Public git still must not commit that blob.  
-- Skip audio: `SLS_KINECT_AUDIO=0`.
+- Power brick / portable PSU on the **operate 12 V** path (not charge-only / 12 V cut).  
+- USB data to tablet. Confirm: `lsusb | grep 045e` → motor `02b0` + camera `02ae` (+ audio after firmware).  
 
 ---
 

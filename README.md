@@ -48,11 +48,16 @@ See [docs/FIRST-BOOT.md](docs/FIRST-BOOT.md) and [docs/images/](docs/images/READ
 ```bash
 cd ~/sls-camera-firmware
 ./scripts/10-fetch-offline.sh && ./scripts/20-sync-app.sh
+# 10-fetch pulls freenect + kinect-audio-setup debs and vendor/kinect/UACFirmware (gitignored)
 sudo ./scripts/prep-sls-media-usb.sh /dev/sdX      # wipe stick
 sudo ./scripts/50-build-field-usb.sh /dev/sdX1     # copy firmware
 # On tablet after Lubuntu 26.04 install:
-#   bash /media/$USER/SLS-MEDIA/install-from-usb.sh && sudo reboot
+#   bash /media/$USER/SLS-MEDIA/install-from-usb.sh
+#   # if mic still missing: sudo bash firmware/scripts/install-kinect-audio-on-target.sh
+#   # unplug/replug Kinect; arecord -l; reboot
 ```
+
+**Kinect audio is part of the install process** (spectrum / Record). See [docs/ISO-AND-FIELD-USB.md](docs/ISO-AND-FIELD-USB.md) § Kinect audio.  
 
 ## Quick start (build host)
 

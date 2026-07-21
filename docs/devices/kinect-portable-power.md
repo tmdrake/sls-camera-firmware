@@ -58,11 +58,16 @@ lsusb | grep 045e
 # gspca should stay blacklisted (appliance install)
 ```
 
-Optional audio firmware (not on public field USB):
+### Kinect audio (install process — required for spectrum / Record)
 
-```bash
-sudo apt install kinect-audio-setup   # MS UAC blob — operator network or private drop
-```
+| Step | Who |
+|------|-----|
+| Fetch deb + `vendor/kinect/UACFirmware` | Build host: `./scripts/10-fetch-offline.sh` |
+| Install on tablet | `install-appliance` / `install-from-usb`, or `scripts/install-kinect-audio-on-target.sh` |
+| Activate | Unplug/replug Kinect; `arecord -l` |
+
+Full checklist: [ISO-AND-FIELD-USB.md](../ISO-AND-FIELD-USB.md) § Kinect audio.  
+MS UAC is **not** committed to public git (gitignored private drop only).
 
 ## VM lab vs field
 

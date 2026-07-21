@@ -225,10 +225,23 @@ bash install-from-usb.sh
 - Lab password: **20260717** — change on production hardware
 - App should start; Quit → power off (exit 10 + launcher)
 
-### 5. Kinect
+### 5. Kinect audio (**required** for spectrum / Record mic)
 
-- Power brick + USB on the **tablet** (no VM passthrough)
-- Optional mic: `sudo apt install kinect-audio-setup` (MS firmware; not on this stick)
+Depth uses freenect (already in appliance install). **Mic** needs MS UAC firmware:
+
+```bash
+# From this stick (after install-from-usb), if spectrum still says "default":
+cd /media/$USER/SLS-MEDIA/firmware   # or /run/media/$USER/SLS-MEDIA/firmware
+sudo ./scripts/install-kinect-audio-on-target.sh
+# Unplug/replug Kinect USB (operate 12V power on)
+arecord -l
+```
+
+Build host must run `./scripts/10-fetch-offline.sh` so the stick has `kinect-audio-setup` deb + `vendor/kinect/UACFirmware`.
+
+### 6. Kinect depth
+
+- Power brick + USB on the **tablet** (operate 12 V path; no VM passthrough)
 
 ## Rebuild this stick (on build host)
 
