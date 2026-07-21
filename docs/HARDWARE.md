@@ -42,7 +42,7 @@ App depth canvas is **1280×720** composite; that fits 800p landscape. **Setting
 
 | Unit | Doc | Native (Win) | Appliance (locked) | RAM | Notes |
 |------|-----|--------------|--------------------|-----|--------|
-| **tablet-01** RCA W101AS23T2 | [devices/rca-w101as23t2.md](devices/rca-w101as23t2.md) | 800×1280 portrait | **1280×800** landscape | **2 GB** | Atom x5-Z8350; **OTG not used** in field; dedicated 5 V charge |
+| **tablet-01** RCA W101AS23T2 | [devices/rca-w101as23t2.md](devices/rca-w101as23t2.md) | 800×1280 portrait | **1280×800** landscape | **2 GB** | Atom x5-Z8350; OTG **lab** stick/NIC (powered hub); dedicated 5 V charge |
 | **tablet-02** TMAX TM800W610L | [devices/tablet-02.md](devices/tablet-02.md) | 1200×1920 portrait | **1920×1200** landscape | **2 GB** | Atom x5-Z8300; **OTG required** (charge/control circuit) |
 | **kinect-kit** | [devices/kinect-portable-power.md](devices/kinect-portable-power.md) | n/a | n/a | n/a | Kinect + portable PSU for both tablets |
 
