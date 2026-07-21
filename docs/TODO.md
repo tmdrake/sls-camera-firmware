@@ -34,14 +34,20 @@
 - [ ] Single appliance ISO in `out/`  
 - [ ] Touch-friendly minimal session (strip stock desktop chrome)  
 
-## Phase 3 — harden
+## Phase 3 — harden + production polish
 
 - [ ] Read-only root + writable `/data`  
-- [ ] Power: inhibit suspend while app running  
+- [ ] Power: inhibit suspend while app running (app #9 wake lock exists; host policy already partial)  
 - [ ] Factory reset flow  
 - [ ] Signed release artifacts / version stamp  
+- [ ] **Branding / splash / bootscreens** — production look (see [BRANDING.md](BRANDING.md))  
+  - [ ] App: `SLS_PRODUCT_NAME` + splash image/text (coord with `sls-camera` TODO)  
+  - [ ] Firmware: `branding/` pack + launcher env; optional wallpaper  
+  - [ ] Plymouth bootsplash theme on appliance image / field USB  
+  - [ ] Optional multi-customer brand packs later  
 
 ## Backlog
 
 - [ ] ARM64 vendor fetch  
 - [ ] OTA update channel (optional)  
+
