@@ -73,7 +73,7 @@ This unit **can** run the SLS appliance (Lubuntu 26.04, autologin, app, quit→p
 | **Windows** | Same EC behavior under Win10; rare advanced power options; not a clean “charge only” mode |
 | **Linux after boot** | Could auto-`poweroff` if AC online — **unreliable here**: `axp288_charger/online` often stays **0** even with brick + charge LED (see lab charge notes) |
 | **Practical lab** | Accept wake-on-plug; or charge while already off and unplug carefully; don’t fight EC unless a BIOS toggle appears |
-| **Appliance helper** | `sls-charge-idle-poweroff` — if charge is **detected** for **15 min**, power off (unattended charge; Kinect unusable on this dedicated charger) — [CHARGE-IDLE-POWEROFF.md](../CHARGE-IDLE-POWEROFF.md) |
+| **Appliance helper** | `sls-charge-idle-poweroff` — **15 min** charge detected → power off (**lab OK 2026-07-21**) — [CHARGE-IDLE-POWEROFF.md](../CHARGE-IDLE-POWEROFF.md) |
 
 **Fleet contrast:** tablet-02 charges via **OTG control circuit** and may run while powered — set `ENABLED=0` in `/etc/sls/charge-idle.conf` on that class so it does not auto-shutdown.
 

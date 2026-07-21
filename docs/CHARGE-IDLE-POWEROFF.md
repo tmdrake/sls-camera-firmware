@@ -7,6 +7,8 @@
 | **tablet-01 RCA** | Dedicated **5 V** jack (detected charger) | **No** — charge path conflicts with Kinect 12 V / field pack | Plug AC → unit may **power on** (EC) → after **15 min** of charging, **power off** so battery fills |
 | **tablet-02** (etc.) | **OTG** via control circuit | Often **yes** (run while powered from that path) | Set **`ENABLED=0`** so the unit does **not** auto-shutdown while “on charger” |
 
+**Lab validated (RCA, 2026-07-21):** with `axp288_charger online=1` / status Charging, service accumulated 15 min and powered off as intended.
+
 Also covers: charger wakes tablet; leave brick plugged overnight without a full desktop session for hours.
 
 ## Detection (best-effort)
