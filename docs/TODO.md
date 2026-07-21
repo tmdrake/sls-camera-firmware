@@ -40,7 +40,8 @@
 - [ ] Factory reset flow  
 - [ ] Signed release artifacts / version stamp  
 - [ ] **Performance** — expectations + zram/governor/pose tips ([PERFORMANCE.md](PERFORMANCE.md)); optional field-lite pose  
-- [ ] **EFI / boot reliability** — intermittent firmware boot issues on tablets (order, media vs eMMC, after power cycle); diagnose when easy to repro  
+- [x] **GRUB 30s “EFI” delay** — `recordfail` after hard power-off; `GRUB_RECORDFAIL_TIMEOUT=0` in install-appliance + [EFI-BOOT.md](EFI-BOOT.md) (tablet-01 2026-07-21)  
+- [ ] **EFI / boot reliability** — remaining: OEM firmware USB probe, wrong boot device; see [EFI-BOOT.md](EFI-BOOT.md)
 - [ ] **Kiosk desktop cleanup** — strip stock Lubuntu/LXQt chrome (see [KIOSK-DESKTOP.md](KIOSK-DESKTOP.md))  
   - [ ] Hide/remove panel, desktop icons, file-manager desktop, noisy applets  
   - [ ] Minimal or single-app session (boot → SLS, not full desktop playground)  

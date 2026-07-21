@@ -95,4 +95,4 @@ Software path stays: Lubuntu 26.04 amd64 + freenect + offline field USB.
 
 - [ ] Measure and record steady FPS + load on tablet-01/02 for HARDWARE-MATRIX  
 - [ ] Optional appliance zram in `install-appliance.sh`  
-- [ ] **EFI / boot flakiness** on fleet units — investigate separately (boot order, Secure Boot off, media vs eMMC, intermittent “no boot” after power cycle); track under Phase 3 / device notes when repro’d  
+- [ ] Residual **EFI** issues (wrong device, USB probe) — primary 30s delay was GRUB `recordfail` (see [EFI-BOOT.md](EFI-BOOT.md))

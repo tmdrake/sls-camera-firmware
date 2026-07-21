@@ -323,6 +323,25 @@ if [[ -f /etc/gdm3/custom.conf ]]; then
   fi
 fi
 
+# GRUB: unclean power-off sets recordfail → default 30s menu (feels like "EFI hang")
+# Cherry Trail tablets often use ia32 UEFI + grubia32; still apply on all arches.
+if [[ -f /etc/default/grub ]]; then
+  if grep -q '^GRUB_RECORDFAIL_TIMEOUT=' /etc/default/grub; then
+    sed -i 's/^GRUB_RECORDFAIL_TIMEOUT=.*/GRUB_RECORDFAIL_TIMEOUT=0/' /etc/default/grub
+  else
+    printf '\n# SLS appliance: no 30s GRUB menu after hard power-off (recordfail)\nGRUB_RECORDFAIL_TIMEOUT=0\n' \
+      >>/etc/default/grub
+  fi
+  sed -i 's/^GRUB_TIMEOUT=.*/GRUB_TIMEOUT=0/' /etc/default/grub 2>/dev/null || true
+  if command -v grub-editenv >/dev/null 2>&1; then
+    grub-editenv /boot/grub/grubenv unset recordfail 2>/dev/null || true
+  fi
+  if command -v update-grub >/dev/null 2>&1; then
+    update-grub 2>/dev/null || echo "WARN: update-grub failed (ok if no grub on this image)" >&2
+  fi
+  echo "Configured GRUB_RECORDFAIL_TIMEOUT=0 (skip 30s failed-boot menu)"
+fi
+
 echo
 echo "=== Appliance install complete ==="
 echo "  App:      $APP_ROOT"

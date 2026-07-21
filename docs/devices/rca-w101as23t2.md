@@ -18,7 +18,7 @@
 | System type (Windows) | **X86-based PC** | Almost certainly **32-bit Windows 10**; still install **amd64 Lubuntu** (CPU is x86_64) |
 | Platform role | Slate (tablet) | |
 | BIOS | BSR4WEUS-S10W05-RCA-V29 (2018-07-14) | |
-| BIOS mode | **UEFI** | Match ISO boot mode |
+| BIOS mode | **UEFI** (ia32 GRUB on this unit) | Match ISO boot mode; 30s delay = GRUB recordfail — [EFI-BOOT.md](../EFI-BOOT.md) |
 | Secure Boot | **Off** | Good for Lubuntu |
 | TPM / BitLocker auto | Not usable | Fine for field Linux |
 | Display | **Intel HD Graphics** (Cherry Trail, DEV_22B0) | |
