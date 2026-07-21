@@ -32,7 +32,9 @@ Cherry Trail + Goodix over **i2c_designware**:
 
 ### Lab root cause (tablet-01 RCA, 2026-07-21) — **OTG USB load**
 
-**Confirmed:** with a **USB device on the OTG port** (hub + NIC in lab), Goodix was **dead** (I2C -110, no `xinput` device). **As soon as OTG USB was unplugged, touch worked** — no reboot required in that instance.
+**Field note:** the SLS field kit **does not normally use this RCA’s OTG/host USB port** (Kinect + tablet power are separate). Treat the following as a **lab/debug gotcha** on this unit only — not an operator procedure for investigations.
+
+**Confirmed in lab:** with a **USB device on the OTG port** (hub + NIC), Goodix was **dead** (I2C -110, no `xinput` device). **As soon as OTG USB was unplugged, touch worked** — no reboot required in that instance.
 
 | Likely mechanism | Why it fits |
 |------------------|-------------|

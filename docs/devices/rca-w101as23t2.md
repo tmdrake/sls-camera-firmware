@@ -45,7 +45,7 @@ This unit **can** run the SLS appliance (Lubuntu 26.04, autologin, app, quit→p
 | Area | Reality on this RCA |
 |------|---------------------|
 | **SLS app path** | Works once install + Kinect 12 V are right |
-| **Goodix touch** | **Intermittent I2C -110** — lab: **OTG USB load (hub/NIC) killed touch; unplug OTG → touch restored** — [TOUCH-GOODIX.md](../TOUCH-GOODIX.md) |
+| **Goodix touch** | Usually OK in field (**OTG port not used** for normal SLS). Lab only: hub/NIC on **OTG** killed Goodix (I2C -110); unplug restored touch — [TOUCH-GOODIX.md](../TOUCH-GOODIX.md) |
 | **Boot delay ~30 s** | Usually GRUB **recordfail** after hard off (fixed with `GRUB_RECORDFAIL_TIMEOUT=0`) — [EFI-BOOT.md](../EFI-BOOT.md); residual OEM EFI quirks possible |
 | **UEFI** | **ia32** GRUB on 32-bit firmware + amd64 OS — normal for this class, still fiddly |
 | **Kinect** | Not a tablet driver issue if only `02b0`; **12 V / charger path** — [kinect-portable-power.md](kinect-portable-power.md) |
