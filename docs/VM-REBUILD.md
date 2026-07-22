@@ -110,7 +110,7 @@ Real tablets have no SPICE — this only affects the lab VM.
 
 Override only for weird lab experiments: `SLS_FORCE_LANDSCAPE=1`. See [POWER-AND-DISPLAY.md](POWER-AND-DISPLAY.md) § Landscape lock.
 
-### Kinect USB passthrough (live depth in guest)
+### Kinect USB passthrough (live depth + mic in guest)
 
 ```bash
 # on host
@@ -120,6 +120,9 @@ cd ~/sls-camera-firmware
 # guest: lsusb | grep 045e ; sls-camera   (not --demo)
 ```
 
+**Order matters for the mic label:** reattach Kinect **before** (or restart) the app. If the spectrum shows only `default` after late attach, restart `sls-camera` (app pin ≥ `69d7127` auto-upgrades to Kinect on the UI tick).  
+
+**Not RCA SST:** skipping field speakers on the VM does **not** remove Kinect USB Audio. Mic path = USB `02bb` + `kinect-audio-setup` UAC + PortAudio. Check: `arecord -l` / `wpctl status` → Kinect source.
 ---
 
 ## 1. Build host prep
