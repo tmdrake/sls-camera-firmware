@@ -80,17 +80,17 @@ Lab snapshot (2026-07-21 ~16:39): role **host**, hub + Cruzer + RTL8153 + mouse 
 
 ### Charger plugs in → tablet powers on
 
-**Observed:** attaching the dedicated 5 V charger can **power the unit on by itself** (LED/hardware path). Common on cheap tablets; usually **EC/firmware**, not Linux or Windows choosing it.
+**Resolved as BIOS/EC behavior** — unit powers on when dedicated 5 V AC is attached. **Ignore for software/firmware work** (not a Lubuntu/SLS bug). Optional BIOS toggle only if the vendor menu exposes “Power on AC / Wake on AC.”
 
-| Approach | Realistic on this RCA? |
-|----------|-------------------------|
-| **UEFI/setup “Power on AC”** | Often **no** menu item on AMI/vendor Cherry Trail; if present, disable “Wake on AC / Power on by AC” |
-| **Windows** | Same EC behavior under Win10; rare advanced power options; not a clean “charge only” mode |
-| **Linux after boot** | Could auto-`poweroff` if AC online — **unreliable here**: `axp288_charger/online` often stays **0** even with brick + charge LED (see lab charge notes) |
-| **Practical lab** | Accept wake-on-plug; or charge while already off and unplug carefully; don’t fight EC unless a BIOS toggle appears |
-| **Appliance helper** | `sls-charge-idle-poweroff` — **15 min** charge detected → power off (**lab OK 2026-07-21**) — [CHARGE-IDLE-POWEROFF.md](../CHARGE-IDLE-POWEROFF.md) |
+| Approach | Note |
+|----------|------|
+| **BIOS/EC** | Root cause; leave alone unless a setup option exists |
+| **Linux charge-idle** | Still useful: if charge is detected for **15 min**, power off for unattended charge — [CHARGE-IDLE-POWEROFF.md](../CHARGE-IDLE-POWEROFF.md) (**lab OK**) |
+| **AXP288 UI** | May still show `online=0` while LED charges — reporting quirk only |
 
 **Fleet contrast:** tablet-02 charges via **OTG control circuit** and may run while powered — set `ENABLED=0` in `/etc/sls/charge-idle.conf` on that class so it does not auto-shutdown.
+
+**HW vs SW (touch / OTG flakiness):** RCA lab showed intermittent Goodix/OTG stress. **tablet-02** is the control: same appliance image — if TMAX is clean, RCA issues lean **hardware**; if both fail the same way, lean **software/image**.
 
 ## Phase 1 / wipe status
 

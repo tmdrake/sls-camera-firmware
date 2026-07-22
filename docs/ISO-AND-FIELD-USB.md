@@ -206,7 +206,46 @@ MOUNT=/media/$USER/SLS-MEDIA ./scripts/40-verify-iso.sh
 
 ---
 
-## Stage B — single appliance ISO (not automated yet)
+## Stage A vs Stage B (ISO process explained)
+
+There are **two different “images”** people mean by “ISO.” Only Stage A is production-ready today.
+
+### Stage A — what you use now (two media)
+
+```text
+┌─────────────────────┐     ┌──────────────────────┐
+│  Lubuntu 26.04 ISO  │     │  SLS-MEDIA stick     │
+│  (installer only)   │     │  (not bootable OS)   │
+│  Rufus / dd / Ventoy│     │  FAT32 + firmware/   │
+└─────────┬───────────┘     └──────────┬───────────┘
+          │ wipe eMMC                   │ after first reboot
+          ▼                             ▼
+   stock Lubuntu on tablet ──► bash install-from-usb.sh
+                                        │
+                                        ▼
+                              appliance (sls, app, offline debs)
+```
+
+| Media | Bootable? | Role |
+|-------|-----------|------|
+| **Lubuntu ISO** | Yes | Install the OS only |
+| **SLS-MEDIA** | No (data) | Offline package + `install-from-usb.sh` |
+
+**Build Stage A stick (host):**
+
+```bash
+cd ~/sls-camera-firmware
+./scripts/10-fetch-offline.sh   # debs, wheels, model, vendor/kinect/UAC
+./scripts/20-sync-app.sh
+sudo ./scripts/prep-sls-media-usb.sh /dev/sdX   # optional wipe/format
+./scripts/50-build-field-usb.sh /run/media/$USER/SLS-MEDIA
+```
+
+**Install on tablet:** Lubuntu → reboot to eMMC → plug SLS-MEDIA → `bash install-from-usb.sh` → Kinect audio check → reboot.
+
+### Stage B — single appliance ISO (future)
+
+**One** bootable ISO that already contains Lubuntu + SLS appliance (or first-boot installs offline pack). No second stick for packages.
 
 | Option | Notes |
 |--------|--------|
@@ -215,7 +254,9 @@ MOUNT=/media/$USER/SLS-MEDIA ./scripts/40-verify-iso.sh
 | mkosi | Declarative |
 
 Planned: embed `vendor/` + pre-run or first-boot `install-appliance.sh` → `out/sls-camera-firmware-*.iso`.  
-Do **Stage A on a real tablet** before investing in Stage B.
+Do **Stage A on real tablets** (RCA done; TMAX next as HW/SW control) before investing heavily in Stage B.
+
+`scripts/30-build-iso.sh` today is mostly **status / USB alias** — not a full Stage B builder yet.
 
 ---
 
