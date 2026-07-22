@@ -133,20 +133,28 @@ Restart SLS Camera. Spectrum should show a Kinect-ish device name, not only `def
 
 ```bash
 echo 'sls:20260717' | sudo chpasswd   # change on production tablets
-sudo reboot
 ```
 
-**5. After reboot**
+**5. Reboot** — on **RCA**, prefer **cold** power-off/on (SST speakers + PMIC). Soft `reboot` is weaker on that chassis.
+
+```bash
+sudo poweroff   # then power on
+# or: sudo reboot   # OK on better HW / VM
+```
+
+**6. After reboot**
 
 | Expect | |
 |--------|--|
 | Autologin | user **`sls`** (SDDM) |
+| Session | **Lubuntu/LXQt still installed** — app is fullscreen on top; desktop is not deleted ([KIOSK-DESKTOP.md](KIOSK-DESKTOP.md)) |
 | App | SLS Camera starts |
 | Quit | Power off (app exit 10 + launcher) |
 | Captures | `/data/sls-captures` and/or stick `sls-captures/` if Auto + mounted |
 | Spectrum / REC mic | Kinect array if step **3** completed; else tablet default mic |
+| RCA speakers | `bytcr-rt5651` + Speaker on — [rca speaker fix](devices/rca-w101as23t2.md#rca-speaker-fix-full-stack-lab-validated-2026-07) |
 
-**6. Kinect sensor (depth)**
+**7. Kinect sensor (depth)**
 
 - Power brick / portable PSU on the **operate 12 V** path (not charge-only / 12 V cut).  
 - USB data to tablet. Confirm: `lsusb | grep 045e` → motor `02b0` + camera `02ae` (+ audio after firmware).  

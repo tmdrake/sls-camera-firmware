@@ -13,6 +13,8 @@ Fewer failed probes in journalctl → cleaner boot, slightly less load on 2 GB
 
 Disable or mask **services and modules we do not use**, not “break Kinect.”
 
+**This is not “remove the Lubuntu desktop.”** LXQt stays; the SLS app runs fullscreen on top. Stripping panel/wallpaper/file manager is a separate track — [KIOSK-DESKTOP.md](KIOSK-DESKTOP.md) Phase 3.
+
 ## Errors seen on tablet-01 RCA (lab) — map to action
 
 | Journal / symptom | Needed for SLS? | Harden action |

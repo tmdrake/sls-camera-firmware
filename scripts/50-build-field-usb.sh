@@ -138,9 +138,13 @@ if id sls &>/dev/null; then
 fi
 
 echo
-echo "Done. Reboot; expect autologin as sls and SLS Camera."
+echo "Done. Next:"
+echo "  1) Kinect audio (if spectrum still default):"
+echo "       sudo bash $HERE/firmware/scripts/install-kinect-audio-on-target.sh"
+echo "       unplug/replug Kinect; arecord -l"
+echo "  2) Reboot — autologin sls, SLS Camera"
 echo "Captures: /data/sls-captures  (and this stick's sls-captures/ if Auto + mounted)"
-echo "SSH (lab): see SSH-LAB.txt on this stick — install openssh-server once on network."
+echo "SSH (lab): see SSH-LAB.txt — openssh-server once on network."
 INSTALL
 chmod +x "$MNT/install-from-usb.sh" 2>/dev/null || true
 
@@ -259,7 +263,10 @@ SLS Camera — field USB (Stage A blow-and-go)
 1) Install Lubuntu 26.04 to the tablet (ISO in optional/ if present, or separate media).
 2) Lab SSH: see SSH-LAB.txt  (openssh-server; password sls / 20260717)
 3) On the tablet, open this stick and run:  bash install-from-usb.sh
-4) Reboot. Autologin: sls
+4) Kinect AUDIO (required for spectrum/Record mic):
+     cd firmware && sudo ./scripts/install-kinect-audio-on-target.sh
+     Unplug/replug Kinect; arecord -l
+5) Reboot. Autologin: sls
 
 Details: BOOTSTRAP.md
 Captures folder: sls-captures/

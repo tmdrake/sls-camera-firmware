@@ -50,11 +50,12 @@
 - [x] **Brightness Settings on RCA** — udev video-group write + brightnessctl seed; app prefers intel_backlight; docs on device page — [rca-w101as23t2.md](devices/rca-w101as23t2.md#brightness-settings-rca)  
 - [x] **RCA panel speakers / DrakeVox** — SST force (`dsp_driver=2`) + `sls-audio-speakers` (false HP jack); cold reboot caution; lab unplug OTG — [rca-w101as23t2.md](devices/rca-w101as23t2.md#rca-speaker-fix-full-stack-lab-validated-2026-07)
 - [ ] **Kiosk desktop cleanup** — strip stock Lubuntu/LXQt chrome (see [KIOSK-DESKTOP.md](KIOSK-DESKTOP.md))  
+  - Note: today **desktop does not go away** — only services harden + app fullscreen; Phase 3 = real chrome strip  
   - [ ] Hide/remove panel, desktop icons, file-manager desktop, noisy applets  
   - [ ] Minimal or single-app session (boot → SLS, not full desktop playground)  
   - [ ] Drop leftover install users; field image = user `sls` only  
   - [ ] Lab vs field profile (SSH/debug OK in lab; locked-down field image)  
-  - [ ] Blacklist/disable more tablet-only drivers if unused (speakers SOF, etc.) after field QA
+  - [ ] Blacklist/disable more tablet-only drivers if unused after field QA
 - [ ] **Branding / splash / bootscreens** — production look (see [BRANDING.md](BRANDING.md))  
   - [ ] App: `SLS_PRODUCT_NAME` + splash image/text (coord with `sls-camera` TODO)  
   - [ ] Firmware: `branding/` pack + launcher env; optional wallpaper  

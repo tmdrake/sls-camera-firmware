@@ -1,11 +1,34 @@
 # Kiosk desktop cleanup (hardening)
 
 **Status:** partial today — full strip is **Phase 3 harden**.  
-Track: [TODO.md](TODO.md) · related [BRANDING.md](BRANDING.md) · [POWER-AND-DISPLAY.md](POWER-AND-DISPLAY.md).
+Track: [TODO.md](TODO.md) · related [BRANDING.md](BRANDING.md) · [POWER-AND-DISPLAY.md](POWER-AND-DISPLAY.md) · [HARDEN-HARDWARE.md](HARDEN-HARDWARE.md).
 
 Production appliances should boot to **SLS only**, not a full Lubuntu playground. Operators should not see file managers, update nags, taskbars under the app, or extra session users.
 
-## Goal
+## Does the Lubuntu desktop “go away” when we harden?
+
+**No — not today.** Two different “harden” concepts:
+
+| What people mean | What install does now | Removes full desktop? |
+|------------------|----------------------|------------------------|
+| **`sls-disable-unused-hw`** ([HARDEN-HARDWARE.md](HARDEN-HARDWARE.md)) | Masks BT, ModemManager, CUPS, apport, fwupd, … | **No** — OS services only |
+| **Quiet session** (this doc + install-appliance) | Hides update/power/screensaver autostart; no suspend; app autostart fullscreen | **No** — **LXQt/Lubuntu session still runs** under the app |
+| **Phase 3 kiosk strip** (not implemented) | Empty panel, no desktop icons, optional single-app session | **Yes (goal)** — no stock playground |
+
+**What you see after Phase 1 wipe + `install-from-usb`:**
+
+```text
+Power on → SDDM autologin sls → full Lubuntu/LXQt session starts
+  → landscape lock + DPMS off
+  → SLS Camera autostarts fullscreen (covers most of the desktop)
+  → Quit → power off (exit 10)
+```
+
+If the app is not running (crash, Quit with fallback none, kill process), the **normal Lubuntu desktop is still there** — panel, wallpaper, pcmanfm, terminal, etc. That is intentional for lab debug until Phase 3.
+
+**Field operators** mostly only ever see SLS fullscreen; **do not** assume the desktop OS was uninstalled.
+
+## Goal (Phase 3)
 
 ```text
 Power on → (optional branded bootsplash) → autologin sls → landscape

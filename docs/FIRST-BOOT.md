@@ -22,12 +22,27 @@ After install on a blank Ubuntu/Lubuntu system:
    arecord -l
    ```
 
-3. Reboot  
+3. **Reboot** — on **RCA tablet-01**, prefer **cold power-off → power on** (not soft reboot) so SST speakers + PMIC settle — [rca-w101as23t2.md](devices/rca-w101as23t2.md#rca-speaker-fix-full-stack-lab-validated-2026-07).  
 4. Auto-login as user **`sls`** (SDDM on Lubuntu 26.04; also LightDM/GDM when present)  
 5. Session autostart: **landscape lock** + DPMS off, then **`/usr/local/bin/sls-camera`** as `sls`  
 6. SLS app opens fullscreen (expect width ≥ height; native portrait panels are rotated)  
 
+**Desktop still present:** install does **not** remove Lubuntu/LXQt. The app covers it; if the app exits, you get the normal desktop. Full chrome strip is **Phase 3** — [KIOSK-DESKTOP.md](KIOSK-DESKTOP.md). “Harden” today mainly means unused **services** ([HARDEN-HARDWARE.md](HARDEN-HARDWARE.md)), not deleting the DE.
+
 If a temporary ISO install user still exists (e.g. leftover desktop scrap), remove it and keep only **`sls`** — see [VM-REBUILD.md](VM-REBUILD.md).
+
+## Wipe + reload (field tablet checklist)
+
+Use a **current SLS-MEDIA** stick (`scripts/50-build-field-usb.sh`; host: `APP_SRC=~/sls-camera` if app fixes are not yet on the remote pin).
+
+1. **Wipe** — Lubuntu 26.04 amd64 UEFI, full disk; Secure Boot Off.  
+2. Boot to eMMC → plug **SLS-MEDIA** → `bash install-from-usb.sh`.  
+3. Expect install to apply: freenect/Kinect audio seeds, landscape, quiet session, HW harden services, **RCA speakers** (SST + `sls-audio-speakers`), backlight udev, PMIC stabilize (when overlay present).  
+4. **Cold power cycle** (especially RCA).  
+5. Lab: **unplug OTG** for touch/audio soak after bring-up.  
+6. Verify: app autostart, brightness ±, DrakeVox audio (RCA: `aplay -l` shows `bytcrrt5651`, `amixer -c1 sget Speaker` on), Kinect depth when 12 V OK.
+
+Stick rebuild + Stage A layout: [ISO-AND-FIELD-USB.md](ISO-AND-FIELD-USB.md).
 
 Without a Kinect (VM smoke test), run:
 
