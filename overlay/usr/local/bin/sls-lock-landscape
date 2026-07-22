@@ -73,14 +73,25 @@ _current_wh() {
 }
 
 _current_rotate_word() {
-  # Best-effort: xrandr line may include left/right/inverted after geometry
-  local out="$1" line
+  # Current orientation is the word *between* geometry and the "(normal left…)"
+  # available-rotations list. Do NOT match inside that parenthesis — that list
+  # always contains "left"/"right" and wrongly CTM-warps VM Spice mice.
+  # Examples:
+  #   … 1280x800+0+0 (normal left inverted right x axis y axis)  → normal
+  #   … 1280x800+0+0 left (normal left inverted right x axis y axis) → left
+  local out="$1" line mid
   line="$(xrandr 2>/dev/null | awk -v o="$out" '$1==o && / connected/ {print; exit}')"
-  if [[ "$line" =~ [[:space:]](left|right|inverted)[[:space:]] ]]; then
-    echo "${BASH_REMATCH[1]}"
-  else
-    echo "normal"
+  [[ -n "$line" ]] || { echo "normal"; return 0; }
+  mid="${line%%(*}"
+  if [[ "$mid" =~ [[:space:]](left|right|inverted)[[:space:]]*$ ]] ||
+     [[ "$mid" =~ [[:space:]](left|right|inverted)[[:space:]]+$ ]]; then
+    # last orientation token before '('
+    if [[ "$mid" =~ [[:space:]](left|right|inverted)[[:space:]]*$ ]]; then
+      echo "${BASH_REMATCH[1]}"
+      return 0
+    fi
   fi
+  echo "normal"
 }
 
 _force_landscape() {
@@ -166,8 +177,21 @@ _map_touch_for_output() {
       _log "touch map-to-output id=${id} name=${name:-?} → ${out}"
     fi
 
+    # Spice/QEMU absolute tablets already track the guest framebuffer; applying
+    # a tablet-style CTM for portrait glass breaks VM mouse when rot is wrong.
+    # Only force CTM for real digitizers, or when RandR is actually rotated.
+    apply_ctm=1
+    case "${name,,}" in
+      *spice*|*qemu*|*virtio*|*ps/2*|*imexps*|*explorer*)
+        # VM/Spice absolute pointers: force identity when display is not RandR-rotated
+        if [[ "$rot" == "normal" ]]; then
+          ctm="1 0 0 0 1 0 0 0 1"
+        fi
+        ;;
+    esac
+
     # Always apply CTM for the RandR orientation (Goodix / i2c-hid often need this)
-    if xinput list-props "$id" 2>/dev/null | grep -q 'Coordinate Transformation Matrix'; then
+    if [[ "$apply_ctm" -eq 1 ]] && xinput list-props "$id" 2>/dev/null | grep -q 'Coordinate Transformation Matrix'; then
       # shellcheck disable=SC2086
       if xinput set-prop "$id" "Coordinate Transformation Matrix" $ctm 2>/dev/null; then
         _log "touch CTM id=${id} rotate=${rot} matrix=${ctm}"
