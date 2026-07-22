@@ -123,12 +123,24 @@ if [[ -n "${DISPLAY:-}" ]] && command -v xset >/dev/null 2>&1; then
 fi
 
 cd "${VIEWER}"
-_log "starting run.sh args=$* SLS_ON_QUIT=${SLS_ON_QUIT} FALLBACK=${SLS_QUIT_FALLBACK} SLS_QUIT_ACTION=${SLS_QUIT_ACTION:-}"
+# Field kits: fixed mount — do not command Kinect tilt motor (sls-camera#10).
+# Pass --no-auto-level unless caller already did, or SLS_KINECT_AUTO_LEVEL=1 (lab).
+_run_args=("$@")
+if [[ "${SLS_KINECT_AUTO_LEVEL:-0}" != "1" ]]; then
+  _has_no_level=0
+  for _a in "${_run_args[@]+"${_run_args[@]}"}"; do
+    [[ "$_a" == "--no-auto-level" ]] && _has_no_level=1 && break
+  done
+  if [[ "$_has_no_level" -eq 0 ]]; then
+    _run_args=(--no-auto-level "${_run_args[@]+"${_run_args[@]}"}")
+  fi
+fi
+_log "starting run.sh args=${_run_args[*]} SLS_ON_QUIT=${SLS_ON_QUIT} FALLBACK=${SLS_QUIT_FALLBACK} SLS_QUIT_ACTION=${SLS_QUIT_ACTION:-}"
 set +e
 if [[ -x ./run.sh ]]; then
-  ./run.sh "$@"
+  ./run.sh "${_run_args[@]+"${_run_args[@]}"}"
 else
-  bash ./run.sh "$@"
+  bash ./run.sh "${_run_args[@]+"${_run_args[@]}"}"
 fi
 code=$?
 set +e
