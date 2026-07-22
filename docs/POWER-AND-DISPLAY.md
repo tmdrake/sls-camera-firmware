@@ -30,7 +30,10 @@ Installed by `install-appliance.sh` from `overlay/`:
 
 Field tablets can still be updated **manually** by a tech (`apt update && apt upgrade`) when planned.
 
-### Landscape lock (tablet-01, tablet-02, fleet default)
+### Landscape lock (field tablets only — **not** Phase 1 VM)
+
+**Applies to:** RCA tablet-01, TMAX tablet-02, other portrait-native fleet glass.  
+**Does not apply to:** KVM/QEMU guests (`sls-appliance-phase1`, Spice virt-viewer). The script **auto-skips** on hypervisor so rotate/CTM cannot break the VM mouse.
 
 Both fleet tablets ship with **portrait-native** panels under Windows:
 
@@ -38,33 +41,41 @@ Both fleet tablets ship with **portrait-native** panels under Windows:
 |------|----------------|------------------------------|
 | **tablet-01** RCA W101AS23T2 | 800×1280 | **1280×800** |
 | **tablet-02** TMAX TM800W610L | 1200×1920 | **1920×1200** |
+| **Phase 1 VM** | Spice already landscape (e.g. 1280×800) | **No rotate / no touch CTM** |
 
 Installed by `install-appliance.sh` from `overlay/`:
 
 | Piece | Role |
 |-------|------|
-| `/usr/local/bin/sls-lock-landscape` | If height > width: `xrandr --rotate **right**` (fleet default; then `left` if still portrait) |
-| same script | Touch: `xinput map-to-output` + **Coordinate Transformation Matrix** for that rotation |
+| `/usr/local/bin/sls-lock-landscape` | Field only: if height > width → `xrandr --rotate **right**` (then `left` if still portrait) |
+| same script | Field only: touch `xinput map-to-output` + **CTM** for that rotation |
+| same script | **VM:** detect KVM/QEMU → log skip and exit 0 (unless forced) |
 | `etc/xdg/autostart/sls-lock-landscape.desktop` | Runs at LXQt login for user `sls` |
 | `sls-camera` launcher | Re-runs lock immediately before starting the app |
 | `systemctl mask iio-sensor-proxy` | Stops accelerometer auto-rotate from undoing landscape |
 
 | Env | Default | Role |
 |-----|---------|------|
-| `SLS_LANDSCAPE_ROTATE` | **`right`** | Preferred RandR rotate (live + fleet notes) |
-| `SLS_SKIP_TOUCH_MAP` | `0` | Set `1` to skip touch remap |
+| `SLS_LANDSCAPE_ROTATE` | **`right`** | Preferred RandR rotate on **field** glass |
+| `SLS_SKIP_TOUCH_MAP` | `0` | Set `1` to skip touch remap (field) |
+| `SLS_SKIP_LANDSCAPE` | `0` | Force skip everywhere |
+| `SLS_FORCE_LANDSCAPE` | `0` | Lab only: run rotate/CTM even on VM |
 
 ```bash
-# Manual check (guest, live, or tablet X11)
+# Field tablet check
 export SLS_LANDSCAPE_ROTATE=right   # fleet default
 /usr/local/bin/sls-lock-landscape
 xrandr | awk '/ connected/{print}'
 # expect width >= height; touch drag should match screen axes
+
+# VM: should no-op
+/usr/local/bin/sls-lock-landscape
+# log: "VM/hypervisor detected — skip landscape rotate/touch CTM"
 ```
 
-**Touch:** Goodix / i2c-hid on Cherry Trail often **does not** follow RandR alone. The lock script sets CTM for `right` (`0 1 0 -1 0 1 0 0 1`) and `map-to-output`. If axes are still wrong, try `SLS_LANDSCAPE_ROTATE=left` and file a note on [#7](https://github.com/tmdrake/sls-camera/issues/7).
+**Touch (RCA / Goodix):** i2c-hid often **does not** follow RandR alone. On tablets the lock script sets CTM for `right` and `map-to-output`. If axes are still wrong, try `SLS_LANDSCAPE_ROTATE=left` and note on [#7](https://github.com/tmdrake/sls-camera/issues/7). **Do not** use tablet CTM recipes on the Phase 1 VM.
 
-Live session Wi‑Fi / SSH (lab): [LIVE-SESSION.md](LIVE-SESSION.md).
+Live session Wi‑Fi / SSH (lab): [LIVE-SESSION.md](LIVE-SESSION.md). VM notes: [VM-REBUILD.md](VM-REBUILD.md).
 
 ### Disable idle blank / suspend (session)
 

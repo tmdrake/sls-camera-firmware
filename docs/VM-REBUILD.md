@@ -61,6 +61,27 @@ Scale the viewer window if you want a larger host window without changing guest 
 
 Real tablets have no SPICE — this only affects the lab VM.
 
+### Landscape lock is for field tablets, not this VM
+
+`sls-lock-landscape` is **fleet glass only** (RCA / TMAX portrait panels → landscape + Goodix CTM). On KVM/QEMU it **auto-skips** so Spice mouse is not CTM-warped.
+
+| Host | Landscape rotate + touch CTM |
+|------|------------------------------|
+| RCA / TMAX bare metal | **Yes** (default) |
+| `sls-appliance-phase1` VM | **No** (detect hypervisor → exit) |
+
+Override only for weird lab experiments: `SLS_FORCE_LANDSCAPE=1`. See [POWER-AND-DISPLAY.md](POWER-AND-DISPLAY.md) § Landscape lock.
+
+### Kinect USB passthrough (live depth in guest)
+
+```bash
+# on host
+cd ~/sls-camera-firmware
+./scripts/vm-kinect-usb.sh status
+./scripts/vm-kinect-usb.sh reattach   # preferred after host reboot / glitch
+# guest: lsusb | grep 045e ; sls-camera   (not --demo)
+```
+
 ---
 
 ## 1. Build host prep

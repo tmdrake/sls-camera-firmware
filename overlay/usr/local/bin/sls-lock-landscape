@@ -1,18 +1,22 @@
 #!/usr/bin/env bash
 # Force X11 outputs into landscape (width >= height) and map touch to follow.
 #
-# Fleet policy (tablet-01 RCA, tablet-02 TMAX, and future slates):
-#   Windows msinfo often reports native portrait glass (e.g. 800×1280,
-#   1200×1920). The appliance session must present landscape so the SLS UI
-#   and Settings layout match field use — not free auto-rotate.
+# Scope: **field tablets with portrait-native glass only**
+#   tablet-01 RCA W101AS23T2, tablet-02 TMAX, future slates — not KVM/QEMU VMs.
+#   Windows msinfo often reports native portrait (e.g. 800×1280). Appliance
+#   session must present landscape so SLS UI matches field use.
 #
-# Field validation (live boot on fleet glass): preferred rotate is **right**,
-# with touch coordinate transform applied after RandR.
+# Phase 1 / lab VMs (sls-appliance-phase1, Spice virt-viewer):
+#   Already landscape (e.g. 1280×800). Landscape rotate + touch CTM is **skipped**
+#   automatically so Spice/QEMU mice are not warped. See docs/POWER-AND-DISPLAY.md
+#   and docs/VM-REBUILD.md.
 #
-# Optional:
-#   SLS_LANDSCAPE_ROTATE=left|right   preferred RandR rotate when flipping
-#                                    portrait→landscape (default: **right**)
+# Optional env:
+#   SLS_LANDSCAPE_ROTATE=left|right   preferred RandR when portrait→landscape
+#                                    (default: **right** — fleet glass)
 #   SLS_SKIP_TOUCH_MAP=1             do not remap pointers / touch
+#   SLS_SKIP_LANDSCAPE=1             force skip (same as VM auto-detect)
+#   SLS_FORCE_LANDSCAPE=1            run even on VM/hypervisor (lab only)
 #   DISPLAY=:0                       default if unset
 set -u
 export DISPLAY="${DISPLAY:-:0}"
@@ -26,6 +30,44 @@ _log() {
   local line="[$(date -Iseconds 2>/dev/null || date)] sls-lock-landscape: $*"
   echo "$line" >>"$LOG" 2>/dev/null || true
 }
+
+# --- VM / hypervisor: do not rotate or CTM-map (field tablets only) ---
+_is_virtual_machine() {
+  # Explicit override checked by caller
+  if command -v systemd-detect-virt >/dev/null 2>&1; then
+    local v
+    v="$(systemd-detect-virt 2>/dev/null || true)"
+    case "$v" in
+      none|"") ;;
+      *) return 0 ;;  # kvm, qemu, vmware, microsoft, oracle, xen, …
+    esac
+  fi
+  # DMI product / chassis often says "Virtual" / "KVM" / "QEMU"
+  local dmi
+  for dmi in /sys/class/dmi/id/product_name /sys/class/dmi/id/sys_vendor \
+             /sys/class/dmi/id/chassis_vendor /sys/class/dmi/id/board_name; do
+    [[ -r "$dmi" ]] || continue
+    case "$(tr '[:upper:]' '[:lower:]' <"$dmi" 2>/dev/null)" in
+      *kvm*|*qemu*|*virtualbox*|*vmware*|*bochs*|*openstack*|*hyper-v*|*virtual machine*)
+        return 0
+        ;;
+    esac
+  done
+  # CPU hypervisor flag (KVM guests)
+  if grep -qE '[[:space:]]hypervisor[[:space:]]' /proc/cpuinfo 2>/dev/null; then
+    return 0
+  fi
+  return 1
+}
+
+if [[ "${SLS_SKIP_LANDSCAPE:-0}" == "1" ]]; then
+  _log "SLS_SKIP_LANDSCAPE=1 — skip (field rotate/CTM not applied)"
+  exit 0
+fi
+if [[ "${SLS_FORCE_LANDSCAPE:-0}" != "1" ]] && _is_virtual_machine; then
+  _log "VM/hypervisor detected — skip landscape rotate/touch CTM (field tablets only; set SLS_FORCE_LANDSCAPE=1 to override)"
+  exit 0
+fi
 
 if ! command -v xrandr >/dev/null 2>&1; then
   _log "xrandr not found — skip"
@@ -75,21 +117,17 @@ _current_wh() {
 _current_rotate_word() {
   # Current orientation is the word *between* geometry and the "(normal left…)"
   # available-rotations list. Do NOT match inside that parenthesis — that list
-  # always contains "left"/"right" and wrongly CTM-warps VM Spice mice.
-  # Examples:
-  #   … 1280x800+0+0 (normal left inverted right x axis y axis)  → normal
-  #   … 1280x800+0+0 left (normal left inverted right x axis y axis) → left
+  # always contains "left"/"right".
+  # Examples (field glass after rotate):
+  #   … 1280x800+0+0 right (normal left inverted right x axis y axis) → right
+  #   … 1280x800+0+0 (normal left inverted right x axis y axis)       → normal
   local out="$1" line mid
   line="$(xrandr 2>/dev/null | awk -v o="$out" '$1==o && / connected/ {print; exit}')"
   [[ -n "$line" ]] || { echo "normal"; return 0; }
   mid="${line%%(*}"
-  if [[ "$mid" =~ [[:space:]](left|right|inverted)[[:space:]]*$ ]] ||
-     [[ "$mid" =~ [[:space:]](left|right|inverted)[[:space:]]+$ ]]; then
-    # last orientation token before '('
-    if [[ "$mid" =~ [[:space:]](left|right|inverted)[[:space:]]*$ ]]; then
-      echo "${BASH_REMATCH[1]}"
-      return 0
-    fi
+  if [[ "$mid" =~ [[:space:]](left|right|inverted)[[:space:]]*$ ]]; then
+    echo "${BASH_REMATCH[1]}"
+    return 0
   fi
   echo "normal"
 }
@@ -139,7 +177,7 @@ _force_landscape() {
   _log "output ${out}: WARN could not reach landscape (last ${w:-?}x${h:-?})"
 }
 
-# libinput / X11 CTM for RandR orientations (row-major 3x3)
+# libinput / X11 CTM for RandR orientations (row-major 3x3) — field touch only
 _ctm_for_rotate() {
   case "$1" in
     normal)   echo "1 0 0 0 1 0 0 0 1" ;;
@@ -167,31 +205,26 @@ _map_touch_for_output() {
     id="$(echo "$line" | sed -n 's/.*id=\([0-9]\+\).*/\1/p')"
     [[ -n "$id" ]] || continue
     name="$(xinput list --name-only "$id" 2>/dev/null || true)"
-    # Skip obvious non-touch masters / virtual core often listed separately
+    # Skip masters / virtual core
     case "${name,,}" in
       *"virtual core"*|*"xwayland"*|*"xtest"*) continue ;;
     esac
+    # Never CTM-map hypervisor pointers even if FORCE_LANDSCAPE (lab)
+    case "${name,,}" in
+      *spice*|*qemu*|*virtio*|*ps/2*|*imexps*|*explorer*)
+        _log "skip CTM for VM/emulated pointer id=${id} name=${name:-?}"
+        # map-to-output only (optional); no matrix
+        xinput map-to-output "$id" "$out" 2>/dev/null || true
+        continue
+        ;;
+    esac
 
-    # Prefer map-to-output so device follows the CRTC (best when it works)
     if xinput map-to-output "$id" "$out" 2>/dev/null; then
       _log "touch map-to-output id=${id} name=${name:-?} → ${out}"
     fi
 
-    # Spice/QEMU absolute tablets already track the guest framebuffer; applying
-    # a tablet-style CTM for portrait glass breaks VM mouse when rot is wrong.
-    # Only force CTM for real digitizers, or when RandR is actually rotated.
-    apply_ctm=1
-    case "${name,,}" in
-      *spice*|*qemu*|*virtio*|*ps/2*|*imexps*|*explorer*)
-        # VM/Spice absolute pointers: force identity when display is not RandR-rotated
-        if [[ "$rot" == "normal" ]]; then
-          ctm="1 0 0 0 1 0 0 0 1"
-        fi
-        ;;
-    esac
-
-    # Always apply CTM for the RandR orientation (Goodix / i2c-hid often need this)
-    if [[ "$apply_ctm" -eq 1 ]] && xinput list-props "$id" 2>/dev/null | grep -q 'Coordinate Transformation Matrix'; then
+    # Goodix / i2c-hid on RCA (and fleet) need CTM after portrait→landscape
+    if xinput list-props "$id" 2>/dev/null | grep -q 'Coordinate Transformation Matrix'; then
       # shellcheck disable=SC2086
       if xinput set-prop "$id" "Coordinate Transformation Matrix" $ctm 2>/dev/null; then
         _log "touch CTM id=${id} rotate=${rot} matrix=${ctm}"
@@ -213,7 +246,6 @@ for out in "${OUTPUTS[@]}"; do
 done
 
 if [[ "${SLS_SKIP_TOUCH_MAP:-0}" != "1" ]]; then
-  # Prefer primary connected output for mapping; else first
   PRIMARY="$(xrandr 2>/dev/null | awk '/ connected primary/{print $1; exit}')"
   TARGET="${PRIMARY:-${OUTPUTS[0]}}"
   _map_touch_for_output "$TARGET"
