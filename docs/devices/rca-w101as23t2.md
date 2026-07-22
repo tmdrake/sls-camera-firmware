@@ -53,7 +53,7 @@ This unit **can** run the SLS appliance (Lubuntu 26.04, autologin, app, quit→p
 | **UEFI** | **ia32** GRUB on 32-bit firmware + amd64 OS — normal for this class, still fiddly |
 | **Kinect** | Not a tablet driver issue if only `02b0`; **12 V / charger path** — [kinect-portable-power.md](kinect-portable-power.md) |
 | **CPU / RAM** | Z8350 + **2 GB** — MediaPipe is CPU-bound; usable, not snappy — [PERFORMANCE.md](../PERFORMANCE.md) |
-| **Audio / speakers** | **Has** RT5651 speakers. Default **SOF** fails → Dummy Output. **SST force** (`dsp_driver=2`) binds `bytcr-rt5651` — works. PipeWire may label sink **Headphones** (UCM name). See [DrakeVox / speakers](#drakevox--speakers-rca). **Reboot caution** — [below](#sst-force--reboot--bios-caution) |
+| **Audio / speakers** | RT5651 present. Needs **two-part fix**: (1) SST not SOF (2) force Speaker (false HP jack). Full recipe — [RCA speaker fix](#rca-speaker-fix-full-stack-lab-validated-2026-07) |
 | **i2c / pinctrl** | Occasional designware timeouts, pinctrl probe errors — same generation as touch flakiness |
 
 **Takeaway for BOM:** fine as a **lab / wipe-load proving** tablet; for **production fleet**, prefer a better-supported SoC (e.g. N100-class) if driver tax stays high. Do not over-invest in Goodix/ACPI heroics on this chassis unless volume forces it.
@@ -161,83 +161,126 @@ Tooltip on Settings brightness shows active **backend** (`sysfs:intel_backlight`
 
 **Related:** panel power / PMIC flakiness after warm reboot can make backlight control flaky even when permissions are right — cold start if the panel stays stuck; [PMIC section](#pmic--warm-reboot-vs-cold-start-rca-lab). General policy: [POWER-AND-DISPLAY.md](../POWER-AND-DISPLAY.md).
 
-### DrakeVox / speakers (RCA)
+### RCA speaker fix (full stack) — lab validated 2026-07
 
-**Hardware:** Yes — panel speakers + Realtek **RT5651** (`ACPI 10EC5651`). This is a **newer** lab unit vs tablet-02 TMAX; speakers are real, not missing.
+**Goal:** DrakeVox (and any app audio) audible on the **panel speakers**.
 
-**Default Linux (no SST force):** SOF claims the DSP and fails → **no** speaker card → PipeWire **Dummy Output** → DrakeVox silent even at 100% volume.
+**Hardware:** Yes — internal speakers + Realtek **RT5651** (`ACPI 10EC5651`). Newer lab unit than tablet-02 TMAX. Windows uses these speakers; Linux does **not** until both parts below are applied.
 
-```text
-sof-audio-acpi-intel-byt … No matching ASoC machine driver found … err: -19
-```
+#### Problem (two independent failures)
 
-**Lab fix validated (2026-07):** force **Intel SST** (not SOF):
+| # | Failure | Symptom | Without fix |
+|---|---------|---------|-------------|
+| **1** | Default **SOF** DSP path | `sof-audio-acpi-intel-byt: No matching ASoC machine driver` | Only HDMI LPE + PipeWire **Dummy Output** — volume at 100% still silent |
+| **2** | False **Headphone Jack** sense | Jack read-only `values=on` even with nothing plugged | UCM enables **Headphones**, **mutes Speaker** — card exists but panel silent |
 
-| Piece | Value |
-|-------|--------|
-| File | `/etc/modprobe.d/sls-audio-sst.conf` (firmware overlay same path) |
+Part 1 alone is not enough: after SST binds `bytcr-rt5651`, PipeWire often still shows **“Built-in Audio Headphones”** and speakers stay off until part 2.
+
+#### Fix part 1 — force Intel SST (not SOF)
+
+| Piece | Path / value |
+|-------|----------------|
+| Conf | `/etc/modprobe.d/sls-audio-sst.conf` |
+| Overlay | `overlay/etc/modprobe.d/sls-audio-sst.conf` |
 | Option | `options snd-intel-dspcfg dsp_driver=2` |
-| Meaning | On kernel 7.0: `0=auto 1=legacy 2=SST 3=SOF 4=AVS` — use **`2` for SST** |
+| Kernel 7.0 meaning | `0=auto 1=legacy **2=SST** 3=SOF 4=AVS` — use **`2`**, not `1` |
 | Blacklist | `blacklist snd_sof_acpi_intel_byt` |
-| After change | `update-initramfs -u` then **controlled** reboot (see caution) |
+| Install | `install-appliance` when `SLS_AUDIO_SST≠0` (default on); or `scripts/apply-audio-sst-on-target.sh` |
+| After write | `update-initramfs -u` then **cold** power-off/on (see [reboot caution](#sst-force--reboot--bios-caution)) |
 
-**After success:**
+**Success (part 1):**
 
 ```text
-card 1: bytcrrt5651 — RCA-W101AS23T2-…-WT9S10WW05
-PipeWire sink: “Built-in Audio Headphones” (UCM label — still the speaker path)
-lsmod: snd_soc_sst_bytcr_rt5651, snd_soc_rt5651
+aplay -l
+  card 1: bytcrrt5651 — RCA-W101AS23T2-…-WT9S10WW05
+lsmod | grep rt5651
+  snd_soc_sst_bytcr_rt5651 …
+  snd_soc_rt5651 …
 ```
 
-Why **Headphones**? ALSA UCM names the default HiFi sink `HiFi: Headphones: sink` on this machine. Not “no speakers.” Unmute **Speaker** as well as Headphone if panel is quiet (`amixer -c1 sset Speaker on`).
+#### Fix part 2 — force Speaker path (false HP jack)
 
-| Before SST | After SST |
-|------------|-----------|
-| HDMI LPE + Dummy Output only | `bytcr-rt5651` + Built-in Audio |
-| DrakeVox silent on panel | Can play through default sink (max volume in app still good) |
-| Kinect USB Audio | Still card for **mic** (spectrum/Record) |
+UCM (`/usr/share/alsa/ucm2/codecs/rt5651/HeadPhones.conf`) turns **Speaker off** when it thinks a jack is present. On this RCA, jack sense is often stuck **on**.
+
+| Piece | Role |
+|-------|------|
+| `/usr/local/bin/sls-audio-speakers` | UCM **Speaker** enable sequence: Speaker/LOUT **on**, HPO/Headphone **off** |
+| `sls-audio-speakers.service` | Boot oneshot + re-run after ~8 s (after UCM/WirePlumber settle) |
+| App `sls_viewer/tts.py` | Same sequence + **100%** volume on **every** DrakeVox speak |
+
+**Success (part 2):**
+
+```bash
+amixer -c1 sget Speaker    # Mono: Playback [on]
+amixer -c1 sget Headphone  # Playback [off] is OK for panel speakers
+sudo /usr/local/bin/sls-audio-speakers   # one-shot if still quiet
+```
+
+Why PipeWire still says **Headphones**? UCM *name* for the default sink — not “no speakers.” Trust **Speaker Switch [on]**, not the sink label.
+
+#### Full stack checklist (install / wipe)
+
+1. Appliance install (or copy overlay pieces) so both conf + scripts land.  
+2. `update-initramfs -u` if SST conf was just added.  
+3. **Cold power-off → power on** (hands on tablet; avoid unattended soft reboot).  
+4. Lab: **unplug OTG** for soak/audio/touch — [OTG notes](#otg-port-rca--lab-debug-notes).  
+5. Verify:
+
+```bash
+test -f /etc/modprobe.d/sls-audio-sst.conf && cat /etc/modprobe.d/sls-audio-sst.conf
+systemctl is-enabled sls-audio-speakers sls-pmic-startup-stabilize
+aplay -l | grep -i bytcr
+amixer -c1 sget Speaker
+export XDG_RUNTIME_DIR=/run/user/$(id -u)
+wpctl get-volume @DEFAULT_AUDIO_SINK@   # want unmuted / high
+# Settings → DrakeVox generate, or:
+espeak-ng -a 200 "test"
+```
+
+| Healthy | Broken |
+|---------|--------|
+| `bytcrrt5651` in `aplay -l` | Only HDMI / Dummy Output |
+| `Speaker` Playback **[on]** | Speaker **[off]**, jack stuck on |
+| DrakeVox audible | Word on screen, no sound |
+
+#### App behavior (all tablets; critical on RCA)
+
+On each DrakeVox speak (`tts.py`):
+
+1. Unmute + default sink / ALSA **100%** (`wpctl` / `pactl` / `amixer`)  
+2. If a card has **Speaker**: force RT5651 Speaker enable sequence  
+3. Peak-normalize soft espeak PCM; CLI fallback **-a 200**
 
 #### SST force — reboot / BIOS caution
 
-**Lab (2026-07):** applying the conf + `update-initramfs` + remote `reboot` did **not** always come back cleanly. Operator needed a **manual reboot** and a **BIOS reset**. Disk-side config **survived** BIOS reset (eMMC Linux + `sls-audio-sst.conf` still present; speakers still bound after next boot).
+**Lab (2026-07):** conf + `update-initramfs` + **remote soft reboot** once left the unit stuck — operator needed **manual reboot** and a **BIOS reset**. **Cold reboot** after that restored a good state.
 
 | Do | Avoid |
 |----|--------|
-| Prefer **full power-off** / cold start after initramfs change (this chassis hates soft reboot — same PMIC class) | Blind remote reboot while you have no hands on the unit |
-| Stay at the tablet for first boot after audio modprobe | Assuming BIOS reset is required every time |
-| After **BIOS defaults**: re-check boot order / Secure Boot Off / time if odd | Expecting BIOS to hold Linux audio settings (it doesn’t — audio is kernel/modprobe) |
+| **Cold power-off / on** after initramfs or platform weirdness | Unattended remote `reboot` with no hands on tablet |
+| Stay at the unit for first boot after audio modprobe | Assuming BIOS reset is always required |
+| After BIOS defaults: re-check boot order, Secure Boot **Off** | Expecting BIOS to store Linux audio settings |
 
-BIOS reset may wipe **UEFI boot order / setup options** only. It does **not** remove `/etc/modprobe.d/sls-audio-sst.conf`. Re-verify: `aplay -l` shows `bytcrrt5651`.
+BIOS reset does **not** remove eMMC files (`sls-audio-sst.conf` survived). Re-check `aplay -l` for `bytcrrt5651`.
 
-**Fleet policy:** keep SST force as **RCA / Cherry Trail RT5651** optional (overlay present; install only when needed). Do **not** apply on TMAX without testing.
+**Fleet:** RCA / Cherry Trail RT5651 only until TMAX is tested. Skip SST: `SLS_AUDIO_SST=0` at install.
 
-#### App behavior (all tablets)
-
-On each DrakeVox speak, the app:
-
-1. Unmutes + sets default sink / ALSA to **100%**  
-2. Peak-normalizes soft espeak PCM  
-3. espeak CLI fallback **-a 200**
-
-With SST bound, audio can still be **silent** if UCM stays on **Headphones**:
-
-| Control | Healthy speakers | Silent (lab RCA) |
-|---------|------------------|------------------|
-| `Headphone Jack` (read-only) | often **off** | stuck **on** (false sense) |
-| `Speaker Switch` | **on** | **off** (UCM Headphones enable seq) |
-| PipeWire sink name | may still say “Headphones” | same name; path wrong |
-
-**Workaround:** `sls-audio-speakers` (boot oneshot) + app TTS path forces UCM **Speaker** enable sequence (Speaker/LOUT on, HPO off). App also does this on every DrakeVox speak.
+#### Manual apply (older image without reinstall)
 
 ```bash
-# Healthy RCA audio
-cat /etc/modprobe.d/sls-audio-sst.conf
-aplay -l   # expect bytcrrt5651
-amixer -c1 contents | grep -A2 'Headphone Jack'
-amixer -c1 sget Speaker   # want Playback [on]
-sudo /usr/local/bin/sls-audio-speakers
-# Dummy Output only → SST not loaded; check conf + cold power cycle
+# On tablet as root (or from firmware tree)
+sudo cp overlay/etc/modprobe.d/sls-audio-sst.conf /etc/modprobe.d/
+sudo install -m 755 overlay/usr/local/bin/sls-audio-speakers /usr/local/bin/
+sudo install -m 644 overlay/etc/systemd/system/sls-audio-speakers.service \
+  /etc/systemd/system/
+sudo update-initramfs -u
+sudo systemctl daemon-reload
+sudo systemctl enable --now sls-audio-speakers.service
+# Then COLD power cycle — not soft reboot
+# Redeploy app pin with updated tts.py for speak-time speaker force
 ```
+
+Helper: `scripts/apply-audio-sst-on-target.sh` (SST conf only; still need speakers oneshot + cold cycle).
 
 ### OTG port (RCA) — lab debug notes
 
@@ -290,3 +333,6 @@ Lab snapshot (2026-07-21 ~16:39): role **host**, hub + Cruzer + RTL8153 + mouse 
 
 - Raw export (operator USB): `tablet.txt` (UTF-16 msinfo)  
 - This summary: `docs/devices/rca-w101as23t2.md`  
+- Speaker fix overlay: `overlay/etc/modprobe.d/sls-audio-sst.conf`, `overlay/usr/local/bin/sls-audio-speakers`, `overlay/etc/systemd/system/sls-audio-speakers.service`  
+- App: `sls-camera` `software/linux/viewer/sls_viewer/tts.py` (max volume + Speaker path on speak)  
+
