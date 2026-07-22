@@ -52,7 +52,7 @@ This unit **can** run the SLS appliance (Lubuntu 26.04, autologin, app, quit→p
 | **UEFI** | **ia32** GRUB on 32-bit firmware + amd64 OS — normal for this class, still fiddly |
 | **Kinect** | Not a tablet driver issue if only `02b0`; **12 V / charger path** — [kinect-portable-power.md](kinect-portable-power.md) |
 | **CPU / RAM** | Z8350 + **2 GB** — MediaPipe is CPU-bound; usable, not snappy — [PERFORMANCE.md](../PERFORMANCE.md) |
-| **Audio / SOF** | Journal noise (`sof-audio` no machine) — non-blocking; unused HW harden masks BT/modem/print — [HARDEN-HARDWARE.md](../HARDEN-HARDWARE.md) |
+| **Audio / SOF** | **No working internal speakers** on Linux (lab 2026-07): SOF probe fails → PipeWire **Dummy Output** only. DrakeVox TTS runs but is **silent** on the panel. Kinect mic (USB) is separate. See [DrakeVox / speakers](#drakevox--speakers-rca) · [HARDEN-HARDWARE.md](../HARDEN-HARDWARE.md) |
 | **i2c / pinctrl** | Occasional designware timeouts, pinctrl probe errors — same generation as touch flakiness |
 
 **Takeaway for BOM:** fine as a **lab / wipe-load proving** tablet; for **production fleet**, prefer a better-supported SoC (e.g. N100-class) if driver tax stays high. Do not over-invest in Goodix/ACPI heroics on this chassis unless volume forces it.
@@ -159,6 +159,55 @@ echo 40 > /sys/class/backlight/$B/brightness   # should not say Permission denie
 Tooltip on Settings brightness shows active **backend** (`sysfs:intel_backlight`, `brightnessctl`, `xrandr:…`). Prefer **sysfs** on this RCA.
 
 **Related:** panel power / PMIC flakiness after warm reboot can make backlight control flaky even when permissions are right — cold start if the panel stays stuck; [PMIC section](#pmic--warm-reboot-vs-cold-start-rca-lab). General policy: [POWER-AND-DISPLAY.md](../POWER-AND-DISPLAY.md).
+
+### DrakeVox / speakers (RCA)
+
+**Symptom:** DrakeVox words appear on screen / in log / in AVI, but **no spoken audio** from the tablet.
+
+**Lab root cause (2026-07, tablet-01):** internal codec never binds.
+
+```text
+sof-audio-acpi-intel-byt … warning: No matching ASoC machine driver found
+sof-audio-acpi-intel-byt … error: sof_probe_work failed err: -19
+```
+
+| What Linux exposes | Result |
+|--------------------|--------|
+| `snd_hdmi_lpe_audio` only (card 0 HDMI LPE) | No panel speaker path |
+| PipeWire default sink | **Dummy Output** @ vol 1.00 |
+| sounddevice default | ALSA `default` → Dummy / null |
+| Kinect USB Audio (`02bb`) | **Input** for spectrum/Record — not tablet speakers |
+
+Raising volume (app or `wpctl`) **cannot** create a missing speaker sink. Soft reboot / cold boot does **not** fix SOF machine mismatch (ACPI/firmware class problem).
+
+#### App behavior (all tablets)
+
+On each DrakeVox speak, the app:
+
+1. Unmutes + sets default sink / ALSA Master·PCM to **100%** (`wpctl` / `pactl` / `amixer`)  
+2. Peak-normalizes soft espeak PCM before `sounddevice` play  
+3. espeak CLI fallback uses amplitude **-a 200**
+
+On RCA this runs successfully into **Dummy Output** → still silent. On units with a real sink, speech should be loud without manual volume.
+
+#### Operator / lab notes
+
+| Need | Guidance |
+|------|----------|
+| Hear DrakeVox live on this RCA | Not available until speakers work under Linux (or external USB audio **output** if added later) |
+| Confirm TTS works | Record AVI while DrakeVox fires — word may be mixed into recording even when speakers silent |
+| Spectrum / mic | Use **Kinect USB Audio** after UAC firmware — independent of speakers |
+| TMAX (tablet-02) | Control unit — re-test speakers there; if TMAX has audio, RCA is **hardware/ACPI** |
+
+```bash
+# Lab check
+wpctl status | grep -A6 Sinks
+# Dummy Output only → no panel speakers
+dmesg | grep -i sof-audio
+aplay -l
+```
+
+**Do not** blacklist SOF hoping for magic — without a matching machine/codec driver there is still no speaker. Optional later experiment (not validated): force legacy SST via `snd-intel-dspcfg dsp_driver=1` — may still fail without a supported machine.
 
 ### OTG port (RCA)
 
