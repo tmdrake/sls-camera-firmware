@@ -47,6 +47,7 @@ This unit **can** run the SLS appliance (Lubuntu 26.04, autologin, app, quit→p
 | **SLS app path** | Works once install + Kinect 12 V are right |
 | **Goodix touch** | Usually OK in field (**OTG port not used** for normal SLS). Lab only: hub/NIC on **OTG** killed Goodix (I2C -110); unplug restored touch — [TOUCH-GOODIX.md](../TOUCH-GOODIX.md) |
 | **PMIC / warm reboot** | Soft reboot often leaves **weird** touch/I2C/charge state; **cold start** fixes most. Software helper mitigates, does not replace cold off — [below](#pmic--warm-reboot-vs-cold-start-rca-lab) |
+| **Brightness (Settings)** | App owns ±10%; often **broken** until video-group sysfs write + prefer `intel_backlight` — [below](#brightness-settings-rca) · [POWER-AND-DISPLAY.md](../POWER-AND-DISPLAY.md) |
 | **Boot delay ~30 s** | Usually GRUB **recordfail** after hard off (fixed with `GRUB_RECORDFAIL_TIMEOUT=0`) — [EFI-BOOT.md](../EFI-BOOT.md); residual OEM EFI quirks possible |
 | **UEFI** | **ia32** GRUB on 32-bit firmware + amd64 OS — normal for this class, still fiddly |
 | **Kinect** | Not a tablet driver issue if only `02b0`; **12 V / charger path** — [kinect-portable-power.md](kinect-portable-power.md) |
@@ -108,6 +109,56 @@ Shared detail / manual rebind: [TOUCH-GOODIX.md](../TOUCH-GOODIX.md).
 | **Preferred shutdown** | Full **poweroff** (app exit 10 / Quit) over casual soft reboot when closing a session |
 
 **Deploy note:** helper is in firmware (`sls-pmic-startup-stabilize`); enable on unit if missing after older install. TMAX (tablet-02) is the HW/SW control — do not assume this RCA PMIC tax applies there until proven.
+
+### Brightness (Settings) — RCA
+
+**Symptom (lab):** SLS Settings → **Brightness − / +** does nothing, shows **n/a**, or shows a % with greyed buttons. Desktop brightness applet is not the field path (hidden LXQt power manager).
+
+**How the app tries to control the panel** (`sls_viewer/backlight.py`):
+
+1. **sysfs** `/sys/class/backlight/*/brightness` (real panel)  
+2. **`brightnessctl`** (if installed)  
+3. **`xrandr --brightness`** (software gamma — weak/no-op on some Cherry Trail modes)
+
+| Failure mode | What you see | Fix |
+|--------------|--------------|-----|
+| sysfs exists, **root-only write** | % shown, **± disabled** (older app) or set fails | `sls` in **video**; udev `99-sls-backlight.rules`; install re-chmods nodes |
+| Wrong node first (`acpi_video0` before `intel_backlight`) | Write “works”, panel unchanged | App prefers **intel_backlight** (and similar) over `acpi_video*` |
+| No backlight class | **n/a** | Rare ACPI gap; try `brightnessctl` / xrandr; cold boot if PMIC wedged |
+| Only xrandr soft dim | Slight gamma change, not LED backlight | Acceptable fallback; fix sysfs permissions for real backlight |
+
+#### Appliance pieces (after reinstall / overlay update)
+
+| Piece | Role |
+|-------|------|
+| `usermod -aG video sls` | Already in install-appliance |
+| `/etc/udev/rules.d/99-sls-backlight.rules` | `chgrp video` + `g+w` on brightness |
+| Package **`brightnessctl`** | Offline seed in `packages/apt-packages.txt` |
+| App pin with fixed `backlight.py` | Prefer real panel; enable ± when set path exists |
+
+#### Lab checklist (this unit)
+
+```bash
+# As sls on the tablet
+ls -la /sys/class/backlight/
+# expect e.g. intel_backlight (and maybe acpi_video0)
+cat /sys/class/backlight/*/brightness /sys/class/backlight/*/max_brightness
+id | tr ',' '\n' | grep video
+
+# One-shot fix without full reinstall (root):
+for f in /sys/class/backlight/*/brightness; do
+  chgrp video "$f"; chmod g+w "$f"
+done
+# then re-open Settings and use ±
+
+# Confirm write as sls (use the real node name from ls above):
+B=$(ls /sys/class/backlight | head -1)
+echo 40 > /sys/class/backlight/$B/brightness   # should not say Permission denied
+```
+
+Tooltip on Settings brightness shows active **backend** (`sysfs:intel_backlight`, `brightnessctl`, `xrandr:…`). Prefer **sysfs** on this RCA.
+
+**Related:** panel power / PMIC flakiness after warm reboot can make backlight control flaky even when permissions are right — cold start if the panel stays stuck; [PMIC section](#pmic--warm-reboot-vs-cold-start-rca-lab). General policy: [POWER-AND-DISPLAY.md](../POWER-AND-DISPLAY.md).
 
 ### OTG port (RCA)
 

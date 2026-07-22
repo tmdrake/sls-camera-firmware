@@ -113,6 +113,29 @@ Lab without poweroff: `SLS_QUIT_ACTION=exit /usr/local/bin/sls-camera`.
 2. Appliance images should avoid a second auto-brightness daemon fighting sysfs.  
 3. If both desktop and app adjust backlight, last writer wins — prefer killing/hiding desktop brightness applets on kiosk chrome cleanup ([KIOSK-DESKTOP.md](KIOSK-DESKTOP.md) Phase 3).
 
+### Making Settings ± work (sysfs permissions)
+
+App backends (`sls-camera` `backlight.py`): **sysfs** → **brightnessctl** → **xrandr** software.
+
+| Piece | Role |
+|-------|------|
+| User `sls` in group **`video`** | install-appliance always |
+| `etc/udev/rules.d/99-sls-backlight.rules` | `chgrp video` + `g+w` on `brightness` / `bl_power` |
+| Package **`brightnessctl`** | Offline seed + set fallback if sysfs still locked |
+| App | Prefer `intel_backlight` over `acpi_video0`; do not grey ± only because sysfs is root-only |
+
+```bash
+# Lab check (as user sls)
+ls -la /sys/class/backlight/*/brightness
+# expect group video, mode -rw-rw-r-- (or similar g+w)
+id | grep -q video && echo "in video group"
+echo 50 | sudo tee /sys/class/backlight/*/brightness   # works as root always
+# then without sudo if udev applied:
+python3 -c "from pathlib import Path; p=list(Path('/sys/class/backlight').glob('*/brightness')); print(p); p[0].write_text('80')"
+```
+
+If Settings still shows **n/a** or no change: no `/sys/class/backlight` (rare ACPI gap) or xrandr-only soft dim — see device notes for RCA.
+
 ## USB / Kinect in a VM (validation only)
 
 Real field units use native USB. For **KVM** bring-up:

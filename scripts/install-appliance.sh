@@ -223,7 +223,20 @@ install -D -m 644 "$OVERLAY/etc/modprobe.d/blacklist-gspca-kinect.conf" \
   /etc/modprobe.d/blacklist-gspca-kinect.conf
 install -D -m 644 "$OVERLAY/etc/udev/rules.d/60-sls-kinect.rules" \
   /etc/udev/rules.d/60-sls-kinect.rules
+if [[ -f "$OVERLAY/etc/udev/rules.d/99-sls-backlight.rules" ]]; then
+  install -D -m 644 "$OVERLAY/etc/udev/rules.d/99-sls-backlight.rules" \
+    /etc/udev/rules.d/99-sls-backlight.rules
+  echo "Installed backlight udev (video group can write brightness)"
+fi
 udevadm control --reload-rules 2>/dev/null || true
+# Apply backlight group/mode now (no wait for next cold plug)
+if [[ -d /sys/class/backlight ]]; then
+  for _bl in /sys/class/backlight/*/brightness /sys/class/backlight/*/bl_power; do
+    [[ -e "$_bl" ]] || continue
+    chgrp video "$_bl" 2>/dev/null || true
+    chmod g+w "$_bl" 2>/dev/null || true
+  done
+fi
 if lsmod 2>/dev/null | grep -q '^gspca_kinect'; then
   modprobe -r gspca_kinect 2>/dev/null || echo "WARN: could not unload gspca_kinect"
 fi

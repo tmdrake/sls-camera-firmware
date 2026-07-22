@@ -39,6 +39,8 @@ curl
 ca-certificates
 usbutils
 v4l-utils
+# Panel brightness (app Settings fallback when sysfs not writable)
+brightnessctl
 # Optional host ffmpeg (app also vendors imageio-ffmpeg wheel)
 ffmpeg
 dosfstools

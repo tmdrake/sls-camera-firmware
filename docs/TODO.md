@@ -46,7 +46,8 @@
 - [x] **Goodix touch + OTG power** (tablet-01) — I2C -110 when OTG loaded (hub/NIC); **unplug OTG restores touch** (2026-07-21); doc [TOUCH-GOODIX.md](TOUCH-GOODIX.md); optional later: warn/udev note if OTG device present  
 - [x] **Charge-idle poweroff** — 15 min sustained charge → poweroff (RCA dedicated charger / unattended); conf off for OTG-run tablets — [CHARGE-IDLE-POWEROFF.md](CHARGE-IDLE-POWEROFF.md)
 - [x] **Disable unused OS hardware/services** — BT, modem, cups, apport, fwupd, thermald noise; conf in `/etc/sls/harden-hw.conf` — [HARDEN-HARDWARE.md](HARDEN-HARDWARE.md)  
-- [x] **PMIC/Goodix warm-boot stabilize** — `sls-pmic-startup-stabilize` (I2C PM on + delayed rebind); cold power-off still gold standard — [TOUCH-GOODIX.md](TOUCH-GOODIX.md)
+- [x] **PMIC/Goodix warm-boot stabilize** — `sls-pmic-startup-stabilize` (I2C PM on + delayed rebind); cold power-off still gold standard — [TOUCH-GOODIX.md](TOUCH-GOODIX.md)  
+- [x] **Brightness Settings on RCA** — udev video-group write + brightnessctl seed; app prefers intel_backlight; docs on device page — [rca-w101as23t2.md](devices/rca-w101as23t2.md#brightness-settings-rca)
 - [ ] **Kiosk desktop cleanup** — strip stock Lubuntu/LXQt chrome (see [KIOSK-DESKTOP.md](KIOSK-DESKTOP.md))  
   - [ ] Hide/remove panel, desktop icons, file-manager desktop, noisy applets  
   - [ ] Minimal or single-app session (boot → SLS, not full desktop playground)  
