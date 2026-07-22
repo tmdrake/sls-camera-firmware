@@ -48,6 +48,23 @@ Cherry Trail + Goodix over **i2c_designware**:
 2. Prefer powered hub / another host for Ethernet debug.  
 3. Soft `sls-touch-rebind` is secondary to removing OTG load.
 
+## Startup software helper (warm reboot)
+
+Cold power-off resets the **AXP288 / I2C rails** most cleanly. Soft reboot often leaves Goodix wedged.
+
+Appliance install enables **`sls-pmic-startup-stabilize.service`**, which after ~12 s:
+
+1. Forces runtime PM **`on`** for designware I2C controllers (incl. Goodix bus)  
+2. If Goodix input is missing → unbind/modprobe/rebind **goodix_ts** (few retries)  
+
+```bash
+systemctl status sls-pmic-startup-stabilize
+tail /data/sls-captures/pmic-startup.log
+# disable: ENABLED=0 in /etc/sls/pmic-startup.conf
+```
+
+This **does not replace** cold start when the PMIC is hard-wedged; it recovers many warm-reboot cases.
+
 ## Recovery (try in order)
 
 1. **Soft rebind** (sometimes works if chip woke later):

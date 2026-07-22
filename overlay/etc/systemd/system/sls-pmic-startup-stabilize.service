@@ -1,0 +1,13 @@
+[Unit]
+Description=SLS: stabilize PMIC/I2C/Goodix after boot (warm-reboot helper)
+After=multi-user.target
+Wants=multi-user.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/sls-pmic-startup-stabilize
+RemainAfterExit=yes
+TimeoutStartSec=120
+
+[Install]
+WantedBy=multi-user.target

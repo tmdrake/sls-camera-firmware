@@ -1,0 +1,118 @@
+#!/usr/bin/env bash
+# Soften finicky AXP288 / I2C / Goodix behavior after *warm* reboots.
+#
+# Cold power-off resets PMIC rails; soft reboot often leaves Goodix/I2C in a
+# bad state (probe -110). This is best-effort software approximation:
+#   1) wait for sysfs / power domains
+#   2) force runtime PM "on" for the Goodix I2C controller
+#   3) rebind Goodix if the input device is missing
+#
+# Does not replace cold start when the controller is truly wedged.
+# Config: /etc/sls/pmic-startup.conf
+# Log:    /data/sls-captures/pmic-startup.log
+set -u
+
+CONF=/etc/sls/pmic-startup.conf
+ENABLED=1
+# Seconds after multi-user before first action (let AXP / i2c probe settle)
+INITIAL_DELAY_SEC=12
+# Extra retries
+RETRIES=3
+RETRY_GAP_SEC=5
+
+if [[ -f "$CONF" ]]; then
+  # shellcheck disable=SC1090
+  source "$CONF" || true
+fi
+[[ -n "${SLS_PMIC_STARTUP:-}" ]] && ENABLED="${SLS_PMIC_STARTUP}"
+
+LOG=/data/sls-captures/pmic-startup.log
+if [[ ! -d "$(dirname "$LOG")" ]]; then
+  LOG=/var/log/sls-pmic-startup.log
+fi
+_log() {
+  local line="[$(date -Iseconds 2>/dev/null || date)] $*"
+  echo "$line" >>"$LOG" 2>/dev/null || true
+  echo "$line"
+}
+
+if [[ "${ENABLED}" != "1" && "${ENABLED}" != "true" && "${ENABLED}" != "yes" ]]; then
+  _log "disabled"
+  exit 0
+fi
+
+if [[ "$(id -u)" -ne 0 ]]; then
+  exec sudo "$0" "$@"
+fi
+
+_log "start delay=${INITIAL_DELAY_SEC}s"
+sleep "${INITIAL_DELAY_SEC}"
+
+# Cherry Trail: Goodix sits on designware I2C (often 808622C1:01 on RCA)
+_force_i2c_pm_on() {
+  local p
+  for p in \
+    /sys/bus/platform/devices/808622C1:00/power/control \
+    /sys/bus/platform/devices/808622C1:01/power/control \
+    /sys/bus/platform/devices/808622C1:02/power/control \
+    /sys/bus/platform/devices/808622C1:03/power/control \
+    /sys/bus/platform/devices/808622C1:04/power/control \
+    /sys/bus/platform/devices/808622C1:05/power/control \
+    /sys/bus/platform/devices/808622C1:06/power/control \
+    /sys/bus/i2c/devices/i2c-GDIX1002:00/power/control
+  do
+    if [[ -f "$p" ]]; then
+      echo on >"$p" 2>/dev/null && _log "pm on: $p" || true
+    fi
+  done
+}
+
+_goodix_ok() {
+  # input node or driver link
+  if ls /sys/class/input/input*/name 2>/dev/null | xargs grep -qi goodix 2>/dev/null; then
+    return 0
+  fi
+  if [[ -e /sys/bus/i2c/devices/i2c-GDIX1002:00/driver ]]; then
+    return 0
+  fi
+  # xinput needs DISPLAY; optional
+  return 1
+}
+
+_rebind_goodix() {
+  _log "rebind Goodix attempt"
+  echo GDIX1002:00 >/sys/bus/i2c/drivers/Goodix-TS/unbind 2>/dev/null || true
+  sleep 1
+  modprobe -r goodix_ts 2>/dev/null || true
+  sleep 1
+  modprobe goodix_ts 2>/dev/null || modprobe goodix 2>/dev/null || true
+  sleep 2
+  # bind if still unbound
+  if [[ ! -e /sys/bus/i2c/devices/i2c-GDIX1002:00/driver ]]; then
+    echo GDIX1002:00 >/sys/bus/i2c/drivers/Goodix-TS/bind 2>/dev/null || true
+    sleep 1
+  fi
+  dmesg | tail -20 | grep -i goodix >>"$LOG" 2>/dev/null || true
+}
+
+_force_i2c_pm_on
+
+try=0
+while [[ "$try" -le "$RETRIES" ]]; do
+  if _goodix_ok; then
+    _log "Goodix present (try=$try) — OK"
+    exit 0
+  fi
+  _log "Goodix missing (try=$try) — force PM + rebind"
+  _force_i2c_pm_on
+  _rebind_goodix
+  try=$((try + 1))
+  if _goodix_ok; then
+    _log "Goodix recovered after rebind"
+    exit 0
+  fi
+  sleep "${RETRY_GAP_SEC}"
+done
+
+_log "WARN: Goodix still missing — cold power-off still best recovery"
+exit 1

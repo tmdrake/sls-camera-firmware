@@ -278,6 +278,21 @@ if [[ -f "$OVERLAY/etc/systemd/system/sls-charge-idle-poweroff.service" ]]; then
   systemctl enable --now sls-charge-idle-poweroff.service 2>/dev/null || true
   echo "Enabled sls-charge-idle-poweroff (15 min sustained charge → poweroff; disable for OTG-run tablets)"
 fi
+# Warm-reboot PMIC/Goodix helper (cold power-off still more reliable)
+if [[ -f "$OVERLAY/usr/local/bin/sls-pmic-startup-stabilize" ]]; then
+  install -D -m 755 "$OVERLAY/usr/local/bin/sls-pmic-startup-stabilize" \
+    /usr/local/bin/sls-pmic-startup-stabilize
+fi
+if [[ -f "$OVERLAY/etc/sls/pmic-startup.conf" ]]; then
+  install -D -m 644 "$OVERLAY/etc/sls/pmic-startup.conf" /etc/sls/pmic-startup.conf
+fi
+if [[ -f "$OVERLAY/etc/systemd/system/sls-pmic-startup-stabilize.service" ]]; then
+  install -D -m 644 "$OVERLAY/etc/systemd/system/sls-pmic-startup-stabilize.service" \
+    /etc/systemd/system/sls-pmic-startup-stabilize.service
+  systemctl daemon-reload 2>/dev/null || true
+  systemctl enable sls-pmic-startup-stabilize.service 2>/dev/null || true
+  echo "Enabled sls-pmic-startup-stabilize (I2C PM on + Goodix rebind after boot)"
+fi
 # Stop accelerometer-driven auto-rotate fighting landscape lock (tablet-01/02)
 systemctl disable --now iio-sensor-proxy.service 2>/dev/null || true
 systemctl mask iio-sensor-proxy.service 2>/dev/null || true
