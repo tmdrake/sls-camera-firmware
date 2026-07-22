@@ -20,6 +20,8 @@ Ship bar  → field checklist green
 
 **Lab lesson:** on the VM, **`./run.sh --demo` / desktop shortcut** was a strong app smoke **before** full appliance install. Keep that for app team; use wipe + SLS-MEDIA on hardware for installer freeze.
 
+**Field audio (SST / `sls-audio-speakers` / PMIC)** is tablet-only. Installing SST `dsp_driver=2` on KVM kills guest HDA → Dummy Output. Installer skips those on virt (`SLS_FIELD_AUDIO` / `SLS_FIELD_PMIC` auto).
+
 ## Boot path (target appliance)
 
 ```text

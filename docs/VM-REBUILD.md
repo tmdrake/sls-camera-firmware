@@ -8,6 +8,24 @@ Proven path: **Lubuntu 26.04 x86_64** + `install-appliance.sh` + optional Kinect
 > Installer ship bar = **bare-metal wipe** (RCA / fleet) — [ARCHITECTURE.md](ARCHITECTURE.md) § Validation tracks.  
 > Landscape rotate/CTM and field audio helpers **auto-skip** on hypervisor.
 
+### VM sound (SPICE / HDA — not RCA)
+
+Guest playback is **ich9 HDA + SPICE**, not RT5651/SST. If appliance install dropped **`sls-audio-sst.conf`** on the VM, HDA fails to bind and PipeWire falls back to **Dummy Output** (silent).
+
+**Recover this guest:**
+
+```bash
+sudo rm -f /etc/modprobe.d/sls-audio-sst.conf
+sudo update-initramfs -u
+sudo systemctl disable --now sls-audio-speakers.service 2>/dev/null || true
+sudo reboot
+# then: aplay -l  → HDA Intel;  wpctl status → Built-in Audio (not Dummy)
+```
+
+`install-appliance.sh` now **skips SST + speakers service + PMIC** on hypervisor by default (`SLS_FIELD_AUDIO` / `SLS_FIELD_PMIC` auto). Force field stack on a VM only with `SLS_FIELD_AUDIO=1` (not recommended).
+
+Field speaker truth remains bare-metal RCA.
+
 ### App-only smoke (what worked well)
 
 Before (or without) treating the guest as a full field appliance, the app already smoked well on the VM:

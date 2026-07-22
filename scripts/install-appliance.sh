@@ -10,6 +10,8 @@
 #   SLS_OFFLINE=1              # never hit network (skip Kinect audio firmware)
 #   SLS_KINECT_AUDIO=0         # skip kinect-audio-setup even if network works
 #   SLS_KINECT_AUDIO=1         # force try kinect-audio-setup (default: try when online)
+#   SLS_FIELD_AUDIO=auto|0|1   # RCA SST + speakers service (default auto: skip on VM)
+#   SLS_FIELD_PMIC=auto|0|1    # PMIC/Goodix stabilize (default auto: skip on VM)
 #   APP_SRC from prior 20-sync-app (default: build/app or vendor/sls-camera)
 set -euo pipefail
 
@@ -24,10 +26,46 @@ APP_ROOT="/opt/sls-camera"
 DATA_CAPTURES="/data/sls-captures"
 OVERLAY="$ROOT/overlay"
 
+# Hypervisor / KVM: field tablet pieces (SST speakers, PMIC) break or no-op wrongly.
+# Default auto = skip on virt; force with SLS_FIELD_AUDIO=1 / SLS_FIELD_PMIC=1.
+_sls_is_virtual_machine() {
+  if command -v systemd-detect-virt >/dev/null 2>&1; then
+    local v
+    v="$(systemd-detect-virt 2>/dev/null || true)"
+    case "$v" in
+      none|"") ;;
+      *) return 0 ;;
+    esac
+  fi
+  if grep -qE '[[:space:]]hypervisor[[:space:]]' /proc/cpuinfo 2>/dev/null; then
+    return 0
+  fi
+  return 1
+}
+_sls_want_field_audio() {
+  case "${SLS_FIELD_AUDIO:-auto}" in
+    0|false|no|off) return 1 ;;
+    1|true|yes|on) return 0 ;;
+    *) _sls_is_virtual_machine && return 1; return 0 ;;
+  esac
+}
+_sls_want_field_pmic() {
+  case "${SLS_FIELD_PMIC:-auto}" in
+    0|false|no|off) return 1 ;;
+    1|true|yes|on) return 0 ;;
+    *) _sls_is_virtual_machine && return 1; return 0 ;;
+  esac
+}
+
 echo "=== SLS appliance install ==="
 echo "  firmware tree: $ROOT"
 echo "  user: $SLS_USER"
 echo "  app:  $APP_ROOT"
+if _sls_is_virtual_machine; then
+  echo "  host: VM/hypervisor (field SST/PMIC default OFF — SLS_FIELD_AUDIO/PMIC=1 to force)"
+else
+  echo "  host: bare metal (field audio/PMIC defaults ON)"
+fi
 
 # Resolve app source
 if [[ -d "$ROOT/build/app/software/linux/viewer" ]]; then
@@ -230,8 +268,20 @@ fi
 # --- gspca blacklist + udev ---
 install -D -m 644 "$OVERLAY/etc/modprobe.d/blacklist-gspca-kinect.conf" \
   /etc/modprobe.d/blacklist-gspca-kinect.conf
-# Cherry Trail RT5651 speakers: force SST not SOF (RCA lab-validated). Skip: SLS_AUDIO_SST=0
-if [[ "${SLS_AUDIO_SST:-1}" != "0" && -f "$OVERLAY/etc/modprobe.d/sls-audio-sst.conf" ]]; then
+# Cherry Trail RT5651 speakers: force SST not SOF (RCA lab-validated).
+# Never install on KVM by default — dsp_driver=2 kills VM ich9/HDA → PipeWire Dummy.
+# Skip: SLS_AUDIO_SST=0 or SLS_FIELD_AUDIO=0/auto-on-VM
+if [[ "${SLS_AUDIO_SST:-1}" == "0" ]]; then
+  echo "SLS_AUDIO_SST=0 — skipping sls-audio-sst.conf"
+elif ! _sls_want_field_audio; then
+  echo "Skipping sls-audio-sst.conf (VM/hypervisor or SLS_FIELD_AUDIO=0) — keeps guest HDA/SPICE playback"
+  # If a prior install dropped it on a VM, remove so reboot recovers
+  if [[ -f /etc/modprobe.d/sls-audio-sst.conf ]] && _sls_is_virtual_machine; then
+    rm -f /etc/modprobe.d/sls-audio-sst.conf
+    update-initramfs -u 2>/dev/null || true
+    echo "  Removed leftover SST conf from this VM (update-initramfs)"
+  fi
+elif [[ -f "$OVERLAY/etc/modprobe.d/sls-audio-sst.conf" ]]; then
   install -D -m 644 "$OVERLAY/etc/modprobe.d/sls-audio-sst.conf" \
     /etc/modprobe.d/sls-audio-sst.conf
   echo "Installed sls-audio-sst.conf (dsp_driver=2 SST for RT5651 speakers)"
@@ -311,33 +361,41 @@ if [[ -f "$OVERLAY/etc/systemd/system/sls-charge-idle-poweroff.service" ]]; then
   systemctl enable --now sls-charge-idle-poweroff.service 2>/dev/null || true
   echo "Enabled sls-charge-idle-poweroff (15 min sustained charge → poweroff; disable for OTG-run tablets)"
 fi
-# Warm-reboot PMIC/Goodix helper (cold power-off still more reliable)
-if [[ -f "$OVERLAY/usr/local/bin/sls-pmic-startup-stabilize" ]]; then
-  install -D -m 755 "$OVERLAY/usr/local/bin/sls-pmic-startup-stabilize" \
-    /usr/local/bin/sls-pmic-startup-stabilize
+# Warm-reboot PMIC/Goodix helper (cold power-off still more reliable) — field tablets only
+if _sls_want_field_pmic; then
+  if [[ -f "$OVERLAY/usr/local/bin/sls-pmic-startup-stabilize" ]]; then
+    install -D -m 755 "$OVERLAY/usr/local/bin/sls-pmic-startup-stabilize" \
+      /usr/local/bin/sls-pmic-startup-stabilize
+  fi
+  if [[ -f "$OVERLAY/etc/sls/pmic-startup.conf" ]]; then
+    install -D -m 644 "$OVERLAY/etc/sls/pmic-startup.conf" /etc/sls/pmic-startup.conf
+  fi
+  if [[ -f "$OVERLAY/etc/systemd/system/sls-pmic-startup-stabilize.service" ]]; then
+    install -D -m 644 "$OVERLAY/etc/systemd/system/sls-pmic-startup-stabilize.service" \
+      /etc/systemd/system/sls-pmic-startup-stabilize.service
+    systemctl daemon-reload 2>/dev/null || true
+    systemctl enable sls-pmic-startup-stabilize.service 2>/dev/null || true
+    echo "Enabled sls-pmic-startup-stabilize (I2C PM on + Goodix rebind after boot)"
+  fi
+else
+  echo "Skipping PMIC stabilize enable (VM/hypervisor or SLS_FIELD_PMIC=0)"
+  systemctl disable --now sls-pmic-startup-stabilize.service 2>/dev/null || true
 fi
-if [[ -f "$OVERLAY/etc/sls/pmic-startup.conf" ]]; then
-  install -D -m 644 "$OVERLAY/etc/sls/pmic-startup.conf" /etc/sls/pmic-startup.conf
-fi
-if [[ -f "$OVERLAY/etc/systemd/system/sls-pmic-startup-stabilize.service" ]]; then
-  install -D -m 644 "$OVERLAY/etc/systemd/system/sls-pmic-startup-stabilize.service" \
-    /etc/systemd/system/sls-pmic-startup-stabilize.service
-  systemctl daemon-reload 2>/dev/null || true
-  systemctl enable sls-pmic-startup-stabilize.service 2>/dev/null || true
-  echo "Enabled sls-pmic-startup-stabilize (I2C PM on + Goodix rebind after boot)"
-fi
-# RT5651 false HP jack → force Speaker path (RCA lab)
+# RT5651 false HP jack → force Speaker path (RCA lab) — not for VM SPICE audio
 if [[ -f "$OVERLAY/usr/local/bin/sls-audio-speakers" ]]; then
   install -D -m 755 "$OVERLAY/usr/local/bin/sls-audio-speakers" \
     /usr/local/bin/sls-audio-speakers
 fi
-if [[ -f "$OVERLAY/etc/systemd/system/sls-audio-speakers.service" ]]; then
+if _sls_want_field_audio && [[ -f "$OVERLAY/etc/systemd/system/sls-audio-speakers.service" ]]; then
   install -D -m 644 "$OVERLAY/etc/systemd/system/sls-audio-speakers.service" \
     /etc/systemd/system/sls-audio-speakers.service
   systemctl daemon-reload 2>/dev/null || true
   systemctl enable sls-audio-speakers.service 2>/dev/null || true
   systemctl start sls-audio-speakers.service 2>/dev/null || true
   echo "Enabled sls-audio-speakers (force internal speakers when HP jack stuck on)"
+elif [[ -f "$OVERLAY/etc/systemd/system/sls-audio-speakers.service" ]]; then
+  echo "Skipping sls-audio-speakers enable (VM/hypervisor or SLS_FIELD_AUDIO=0)"
+  systemctl disable --now sls-audio-speakers.service 2>/dev/null || true
 fi
 # Stop accelerometer-driven auto-rotate fighting landscape lock (tablet-01/02)
 systemctl disable --now iio-sensor-proxy.service 2>/dev/null || true
