@@ -88,7 +88,9 @@ Software path stays: Lubuntu 26.04 amd64 + freenect + offline field USB.
 
 - [HARDWARE.md](HARDWARE.md) — fleet table  
 - [KIOSK-DESKTOP.md](KIOSK-DESKTOP.md) — less chrome → more headroom  
+- [VM-REBUILD.md](VM-REBUILD.md) — **tablet-class 2 GiB / 2 vCPU** + DrakeVox TTS smoke  
 - [devices/kinect-portable-power.md](devices/kinect-portable-power.md) — 12 V / motor-only USB  
+- App issue [sls-camera#13](https://github.com/tmdrake/sls-camera/issues/13) — TTS latency under load
 - [devices/rca-w101as23t2.md](devices/rca-w101as23t2.md) — tablet-01  
 - App viewer: `config.target_fps`, `pose.py` (MediaPipe), freenect capture thread  
 
