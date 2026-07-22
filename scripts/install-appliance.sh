@@ -72,6 +72,15 @@ for p in "${SEED_PKGS[@]}"; do
   PKGS+=("$(resolve_seed "$p")")
 done
 
+# kinect-audio-setup is a seed and prompts MS EULA via debconf. Without preseeding,
+# noninteractive/SSH install hangs on a ncurses Yes/No (lab 2026-07 RCA wipe).
+# Preseed BEFORE any apt that may pull that package.
+export DEBIAN_FRONTEND="${DEBIAN_FRONTEND:-noninteractive}"
+if command -v debconf-set-selections >/dev/null 2>&1; then
+  echo 'kinect-audio-setup kinect-audio-setup/accept_eula boolean true' | debconf-set-selections 2>/dev/null || true
+  echo 'kinect-audio-setup kinect-audio-setup/accepted-kinect-eula boolean true' | debconf-set-selections 2>/dev/null || true
+fi
+
 if compgen -G "$ROOT/vendor/debs/*.deb" >/dev/null 2>&1; then
   n_debs=$(find "$ROOT/vendor/debs" -name '*.deb' | wc -l)
   echo "Installing seeds using offline deb cache ($n_debs files in vendor/debs)…"

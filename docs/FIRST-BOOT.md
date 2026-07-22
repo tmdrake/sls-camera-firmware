@@ -110,6 +110,7 @@ Operator should only need:
 | Black screen / no app | `journalctl -b`, autostart desktop file, `DISPLAY` |
 | freenect BUSY | `lsmod \| grep gspca`; blacklist applied? |
 | Spectrum says **default** / not Kinect mic | Offline pack should include `kinect-audio-setup` deb + `vendor/kinect/UACFirmware` from fetch; unplug/replug Kinect. Rebuild stick if missing. |
+| **`install-from-usb` hangs** (ncurses EULA) | `kinect-audio-setup` asks Microsoft EULA; without debconf preseed, SSH/noninteractive install waits forever. Fixed in install-appliance (preseed before seed apt). Manual: accept **Yes** on tablet, or preseed — [ISO-AND-FIELD-USB.md](ISO-AND-FIELD-USB.md) § Kinect EULA |
 | **Blank screen** on some boots | Launcher waits for X + re-applies landscape; autostart delays 3s. If still blank: SSH, check `launcher.log`, restart `/usr/local/bin/sls-camera`. See [POWER-AND-DISPLAY.md](POWER-AND-DISPLAY.md). |
 | Spectrum silent | `libportaudio2`, Kinect USB Audio after firmware |
 | DrakeVox silent on **RCA** speakers | Apply **full RCA speaker fix** (SST `dsp_driver=2` + `sls-audio-speakers`); cold power cycle; lab unplug OTG — [rca-w101as23t2.md](devices/rca-w101as23t2.md#rca-speaker-fix-full-stack-lab-validated-2026-07) |

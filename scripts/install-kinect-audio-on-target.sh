@@ -13,6 +13,11 @@ if [[ -z "$UAC" ]]; then
   UAC="$ROOT/vendor/kinect/UACFirmware"
 fi
 export DEBIAN_FRONTEND=noninteractive
+# Avoid hang on MS Kinect EULA ncurses prompt (SSH/remote install)
+if command -v debconf-set-selections >/dev/null 2>&1; then
+  echo 'kinect-audio-setup kinect-audio-setup/accept_eula boolean true' | debconf-set-selections 2>/dev/null || true
+  echo 'kinect-audio-setup kinect-audio-setup/accepted-kinect-eula boolean true' | debconf-set-selections 2>/dev/null || true
+fi
 if [[ -n "$DEB" && -f "$DEB" ]]; then
   echo "Installing $DEB"
   apt-get install -y "$DEB" || dpkg -i "$DEB" || true

@@ -129,6 +129,33 @@ arecord -l
 
 Restart SLS Camera. Spectrum should show a Kinect-ish device name, not only `default`.
 
+#### Kinect audio EULA hang (lab 2026-07 — RCA wipe)
+
+`kinect-audio-setup` is in the offline **seed** list. On first `apt install`, Debian may show an **interactive** Microsoft Kinect SDK EULA (ncurses Yes/No).
+
+| Context | What happens |
+|---------|----------------|
+| Tablet keyboard + terminal | Operator can select **Yes** |
+| SSH / unattended `install-from-usb` | Install **appears stuck** with no progress |
+
+**Lab saw:** remote install sat on “Do you accept the Microsoft Kinect for Windows EULA?” until killed.
+
+**Mitigation (in tree):** `install-appliance.sh` now runs `debconf-set-selections` for the EULA **before** seed package install (`DEBIAN_FRONTEND=noninteractive`). Same preseed in `install-kinect-audio-on-target.sh`.
+
+**If stuck on an older stick (manual):**
+
+```bash
+# On tablet (or via SSH if you can interrupt):
+sudo killall apt apt-get dpkg 2>/dev/null || true
+echo 'kinect-audio-setup kinect-audio-setup/accept_eula boolean true' | sudo debconf-set-selections
+echo 'kinect-audio-setup kinect-audio-setup/accepted-kinect-eula boolean true' | sudo debconf-set-selections
+export DEBIAN_FRONTEND=noninteractive
+cd /run/media/$USER/SLS-MEDIA   # or /media/$USER/SLS-MEDIA
+sudo -E bash install-from-usb.sh
+```
+
+Or answer **Yes** once in the on-tablet dialog, then re-run install.
+
 **4. Lab user (documented for rebuilds only)**
 
 ```bash
