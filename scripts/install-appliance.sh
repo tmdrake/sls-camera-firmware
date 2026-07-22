@@ -317,6 +317,19 @@ if [[ -f "$OVERLAY/etc/systemd/system/sls-pmic-startup-stabilize.service" ]]; th
   systemctl enable sls-pmic-startup-stabilize.service 2>/dev/null || true
   echo "Enabled sls-pmic-startup-stabilize (I2C PM on + Goodix rebind after boot)"
 fi
+# RT5651 false HP jack → force Speaker path (RCA lab)
+if [[ -f "$OVERLAY/usr/local/bin/sls-audio-speakers" ]]; then
+  install -D -m 755 "$OVERLAY/usr/local/bin/sls-audio-speakers" \
+    /usr/local/bin/sls-audio-speakers
+fi
+if [[ -f "$OVERLAY/etc/systemd/system/sls-audio-speakers.service" ]]; then
+  install -D -m 644 "$OVERLAY/etc/systemd/system/sls-audio-speakers.service" \
+    /etc/systemd/system/sls-audio-speakers.service
+  systemctl daemon-reload 2>/dev/null || true
+  systemctl enable sls-audio-speakers.service 2>/dev/null || true
+  systemctl start sls-audio-speakers.service 2>/dev/null || true
+  echo "Enabled sls-audio-speakers (force internal speakers when HP jack stuck on)"
+fi
 # Stop accelerometer-driven auto-rotate fighting landscape lock (tablet-01/02)
 systemctl disable --now iio-sensor-proxy.service 2>/dev/null || true
 systemctl mask iio-sensor-proxy.service 2>/dev/null || true

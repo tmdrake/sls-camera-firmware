@@ -218,25 +218,40 @@ On each DrakeVox speak, the app:
 2. Peak-normalizes soft espeak PCM  
 3. espeak CLI fallback **-a 200**
 
-With SST bound on RCA, that should drive the real panel path (name may still say Headphones).
+With SST bound, audio can still be **silent** if UCM stays on **Headphones**:
+
+| Control | Healthy speakers | Silent (lab RCA) |
+|---------|------------------|------------------|
+| `Headphone Jack` (read-only) | often **off** | stuck **on** (false sense) |
+| `Speaker Switch` | **on** | **off** (UCM Headphones enable seq) |
+| PipeWire sink name | may still say “Headphones” | same name; path wrong |
+
+**Workaround:** `sls-audio-speakers` (boot oneshot) + app TTS path forces UCM **Speaker** enable sequence (Speaker/LOUT on, HPO off). App also does this on every DrakeVox speak.
 
 ```bash
 # Healthy RCA audio
 cat /etc/modprobe.d/sls-audio-sst.conf
 aplay -l   # expect bytcrrt5651
-wpctl status | sed -n '/Sinks/,/Sources/p'
+amixer -c1 contents | grep -A2 'Headphone Jack'
+amixer -c1 sget Speaker   # want Playback [on]
+sudo /usr/local/bin/sls-audio-speakers
 # Dummy Output only → SST not loaded; check conf + cold power cycle
 ```
 
-### OTG port (RCA)
+### OTG port (RCA) — lab debug notes
+
+**Field:** OTG is **not** part of normal SLS on this RCA (Kinect + charge use other paths).
+
+**Lab (current practice, 2026-07):** after cold reboot / platform weirdness, **unplug OTG** (hub + NIC/stick) when chasing touch, PMIC, or random flakiness. OTG load has killed Goodix and stressed power/role switching. Prefer **SSH over a short session with OTG**, then **unplug OTG for soak/audio/touch tests**.
 
 | Use | Guidance |
 |-----|----------|
-| **Field investigations** | Kinect + tablet power are **not** via OTG; OTG not required for core SLS |
-| **Lab / this unit** | OTG **may** be used for **USB drive** (SLS-MEDIA / captures) and **external NIC** (SSH) |
-| **Hub** | Prefer **self-powered** hub so bus power is not drawn from the tablet |
-| **Touch risk** | Lab saw Goodix die with **unpowered** hub load; unplug restored touch. **Self-powered hub should not brown out rails** — if touch still dies, investigate role-switch / PMIC, not only hub power. |
-| **OTG “died”** | Separate from touch: check role=`host`, `lsusb`, dmesg xhci; not disabled by SLS harden/AutoRun. See notes below. |
+| **Field investigations** | OTG **not** required; leave empty |
+| **Lab bring-up** | OTG OK for **USB stick + external NIC**, prefer **self-powered hub** |
+| **After cold reboot / audio/touch debug** | **Unplug OTG** for now until platform is stable — see lab note above |
+| **Hub** | Self-powered; hub power on before tablet |
+| **Touch risk** | Unpowered OTG load → Goodix I2C -110; unplug often restores touch |
+| **OTG “died”** | role=`host`, `lsusb`, dmesg; not SLS harden |
 
 ### OTG USB death — debug checklist (lab)
 

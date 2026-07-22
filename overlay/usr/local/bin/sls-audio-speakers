@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+# Force internal speakers on bytcr-rt5651 (RCA) when Headphone Jack is stuck ON.
+# UCM prefers Headphones (priority 200 + jack) and mutes Speaker — silent panel.
+# Safe no-op when no Speaker control exists.
+set -u
+
+_log() { echo "[sls-audio-speakers] $*"; }
+
+for card in 0 1 2 3; do
+  if ! amixer -c"$card" sget Speaker >/dev/null 2>&1; then
+    continue
+  fi
+  _log "card $card: enabling Speaker path (UCM Speaker enable sequence)"
+  amixer -c"$card" -q cset name='Speaker Switch' on 2>/dev/null || true
+  amixer -c"$card" -q cset name='LOUT L Playback Switch' on 2>/dev/null || true
+  amixer -c"$card" -q cset name='LOUT R Playback Switch' on 2>/dev/null || true
+  amixer -c"$card" -q cset name='Headphone Switch' off 2>/dev/null || true
+  amixer -c"$card" -q cset name='HPO L Playback Switch' off 2>/dev/null || true
+  amixer -c"$card" -q cset name='HPO R Playback Switch' off 2>/dev/null || true
+  amixer -c"$card" -q sset Speaker on 2>/dev/null || true
+  # Max headphone control level still used by some mix paths
+  amixer -c"$card" -q sset Headphone 100% 2>/dev/null || true
+  if command -v wpctl >/dev/null; then
+    # session user may need XDG_RUNTIME_DIR; best-effort as root is noop
+    export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/1000}"
+    wpctl set-mute @DEFAULT_AUDIO_SINK@ 0 2>/dev/null || true
+    wpctl set-volume @DEFAULT_AUDIO_SINK@ 1.0 2>/dev/null || true
+  fi
+  amixer -c"$card" sget Speaker 2>/dev/null | head -6 || true
+  exit 0
+done
+_log "no Speaker mixer found — skip"
+exit 0

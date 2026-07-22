@@ -1,0 +1,16 @@
+[Unit]
+Description=SLS: force RT5651 internal speakers (false HP jack workaround)
+After=sound.target multi-user.target
+Wants=sound.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/sls-audio-speakers
+# Re-run once after desktop/UCM settles (jack auto-switch fights us)
+ExecStartPost=/bin/sleep 8
+ExecStartPost=/usr/local/bin/sls-audio-speakers
+RemainAfterExit=yes
+TimeoutStartSec=30
+
+[Install]
+WantedBy=multi-user.target
