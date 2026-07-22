@@ -37,7 +37,7 @@ Use a **current SLS-MEDIA** stick (`scripts/50-build-field-usb.sh`; host: `APP_S
 
 1. **Wipe** — Lubuntu 26.04 amd64 UEFI, full disk; Secure Boot Off.  
 2. Boot to eMMC → plug **SLS-MEDIA** → `bash install-from-usb.sh`.  
-3. Expect install to apply: freenect/Kinect audio seeds, landscape, quiet session, HW harden, **GRUB recordfail=0** (no ~30 s “EFI” hang), **RCA speakers** (SST + OUT volume), backlight udev, PMIC stabilize.  
+3. Expect install to apply: freenect/Kinect audio seeds, landscape, quiet session, **SDDM autologin + Relogin**, **`/etc/sudoers.d/sls-poweroff`** (Quit → power off), HW harden, **GRUB recordfail=0**, **RCA speakers** (SST + OUT volume), backlight udev, PMIC stabilize.  
 4. **Cold power cycle** (especially RCA).  
 5. Lab: **unplug OTG** for touch/audio soak after bring-up.  
 6. Verify: **fast GRUB** (below), app autostart, brightness ±, DrakeVox audible on RCA, Kinect depth when 12 V OK.
@@ -98,6 +98,39 @@ Without a Kinect (VM smoke test), run:
 ```bash
 /usr/local/bin/sls-camera --demo
 ```
+
+### Quit → power off (required setup)
+
+App confirms “Power off?” and exits **10**. Launcher runs passwordless:
+
+```text
+sudo -n /usr/sbin/poweroff   # needs /etc/sudoers.d/sls-poweroff
+```
+
+**Lab wipe (2026-07):** partial install left **sudoers missing** → log:
+
+```text
+exit 10: app requested power-off
+sudo: interactive authentication is required
+ERROR: all poweroff methods failed — see log and sudoers.d/sls-poweroff
+```
+
+Bare `systemctl poweroff` as user also fails (polkit / inhibitors). **Install must** drop:
+
+| File | Mode | Content |
+|------|------|---------|
+| `/etc/sudoers.d/sls-poweroff` | `0440` | `sls ALL=(root) NOPASSWD: … poweroff, shutdown, systemctl poweroff` |
+
+```bash
+# Verify
+sudo -n /usr/sbin/poweroff --help >/dev/null && echo poweroff_nopasswd_ok
+test -f /etc/sudoers.d/sls-poweroff && sudo visudo -cf /etc/sudoers.d/sls-poweroff
+# Fix
+sudo install -m 440 /path/to/overlay/etc/sudoers.d/sls-poweroff /etc/sudoers.d/sls-poweroff
+# then Quit from app again
+```
+
+See [POWER-AND-DISPLAY.md](POWER-AND-DISPLAY.md). Overlay: `overlay/etc/sudoers.d/sls-poweroff`.
 
 ### Quit / power off (respects app request)
 
@@ -199,6 +232,8 @@ Operator should only need:
 | **Blank screen** on some boots | Launcher waits for X + re-applies landscape; autostart delays 3s. If still blank: SSH, check `launcher.log`, restart `/usr/local/bin/sls-camera`. See [POWER-AND-DISPLAY.md](POWER-AND-DISPLAY.md). |
 | Spectrum silent | `libportaudio2`, Kinect USB Audio after firmware |
 | DrakeVox silent on **RCA** speakers | Check all 3: `bytcrrt5651`, Speaker **on**, **`OUT Playback Volume` 39,39** (0,0 = silent). `sudo sls-audio-speakers`; cold cycle if no card; unplug OTG — [rca speaker setup](devices/rca-w101as23t2.md#rca-speaker-fix-full-stack-lab-validated-2026-07) |
+| **Quit does not power off** | App exit **10** but host stays up: missing **`/etc/sudoers.d/sls-poweroff`** — see [Quit → power off](#quit--power-off-required-setup) |
+
 
 ## Factory reset (Phase 3)
 

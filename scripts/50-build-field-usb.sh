@@ -229,6 +229,7 @@ Install applies (must not skip on rebuild):
 |------------|------|
 | **GRUB fast loader** | `GRUB_RECORDFAIL_TIMEOUT=0` + `grub.d/50-sls-recordfail.cfg` — no ~30–38 s “EFI” hang after hard power-off ([EFI-BOOT.md](docs/EFI-BOOT.md)). Lab: loader ~6 s when set. |
 | **SDDM autologin** | `User=sls`, `Session=Lubuntu`, **`Relogin=true`** |
+| **Quit → power off** | `/etc/sudoers.d/sls-poweroff` (passwordless `poweroff` for `sls`) |
 | **RCA speakers** | SST + `sls-audio-speakers` (Speaker/HP path + **OUT volume 39**) |
 | Backlight / PMIC / Kinect seeds | As in install-appliance |
 
@@ -273,10 +274,11 @@ cd ~/sls-camera-firmware
 
 1. **`overlay/etc/default/grub.d/50-sls-recordfail.cfg`** + install-appliance GRUB block → fast loader  
 2. **`overlay/etc/sddm.conf.d/50-sls-autologin.conf`** (`Relogin=true`)  
-3. **`overlay/usr/local/bin/sls-audio-speakers`** + service (OUT volume + Speaker/HP)  
-4. Kinect EULA debconf preseed before seed apt  
+3. **`overlay/etc/sudoers.d/sls-poweroff`** → app Quit exit 10 actually powers off  
+4. **`overlay/usr/local/bin/sls-audio-speakers`** + service (OUT volume + Speaker/HP)  
+5. Kinect EULA debconf preseed before seed apt  
 
-Verify after tablet install: `systemd-analyze` (loader ≪ 30 s), autologin, DrakeVox audible.
+Verify after tablet install: `systemd-analyze` (loader ≪ 30 s), autologin, `sudo -n /usr/sbin/poweroff --help`, DrakeVox audible.
 BOOT
 
 # README for humans opening the stick in a file manager

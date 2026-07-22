@@ -95,7 +95,7 @@ Firmware launcher (`overlay/usr/local/bin/sls-camera`) **respects app exit codes
 
 | Code | App intent | Launcher |
 |------|------------|----------|
-| `10` | Power off host | `loginctl` / `systemctl` / `sudo poweroff` (`etc/sudoers.d/sls-poweroff`) |
+| `10` | Power off host | **`sudo -n /usr/sbin/poweroff`** via launcher — requires `/etc/sudoers.d/sls-poweroff` (mode 0440). Without it: “interactive authentication is required” and host stays up. |
 | `11` | Relaunch | re-exec launcher |
 | `0` | Clean quit | `SLS_QUIT_FALLBACK` (appliance default `shutdown` until app emits `10`) |
 
