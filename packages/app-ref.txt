@@ -1,3 +1,4 @@
 # Pinned sls-camera commit for firmware builds (update with scripts/20-sync-app.sh)
-# bcc5ffc — #8 format+polkit, #9 wake lock, 16:10 Settings, spectrum styles, quit exit-10 only
-bcc5ffc24d691f6640838bd1329e3e6ebfda6f5e
+# 172acc4 — #10 no-auto-level motor, #11 date/time, #12 battery UI, #13 TTS async,
+#   --hide-cursor, confidence default 25%, Settings Format always visible
+172acc4049a153ab95b2cebbc8ec7840b4aa3d0a

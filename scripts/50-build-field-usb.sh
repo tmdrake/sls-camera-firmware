@@ -227,10 +227,13 @@ Install applies (must not skip on rebuild):
 
 | Setup item | What |
 |------------|------|
+| **App + launcher** | `/opt/sls-camera` + `/usr/local/bin/sls-camera`; **menu + Desktop** “SLS Camera” |
+| **No motor (field)** | Launcher injects **`--no-auto-level`** (no tilt on open). Lab: `SLS_KINECT_AUTO_LEVEL=1` |
 | **GRUB fast loader** | `GRUB_RECORDFAIL_TIMEOUT=0` + `grub.d/50-sls-recordfail.cfg` — no ~30–38 s “EFI” hang after hard power-off ([EFI-BOOT.md](docs/EFI-BOOT.md)). Lab: loader ~6 s when set. |
 | **SDDM autologin** | `User=sls`, `Session=Lubuntu`, **`Relogin=true`** |
 | **Quit → power off** | `/etc/sudoers.d/sls-poweroff` (passwordless `poweroff` for `sls`) |
 | **RCA speakers** | SST + `sls-audio-speakers` (Speaker/HP path + **OUT volume 39**) |
+| **Date & time** | polkit timedate + `sudoers.d/sls-timedate` (Settings without root password) |
 | Backlight / PMIC / Kinect seeds | As in install-appliance |
 
 ### 4. Reboot
@@ -238,7 +241,8 @@ Install applies (must not skip on rebuild):
 - Prefer **cold power-off → power on** on RCA after first install (SST/I2C).
 - Autologin: **sls** (no greeter)
 - Lab password: **20260717** — change on production hardware
-- App should start; Quit → power off (exit 10 + launcher)
+- App should start; if desktop only: **Applications → SLS Camera** or `sls-camera` / `sls-camera --demo`
+- Quit → power off (exit 10 + launcher); tilt motor should **not** move on open
 - Boot should be **fast at GRUB** — if ~30 s delay returns, re-check `RECORDFAIL` (see EFI-BOOT.md)
 
 ### 5. Kinect audio (**required** for spectrum / Record mic)
@@ -277,8 +281,12 @@ cd ~/sls-camera-firmware
 3. **`overlay/etc/sudoers.d/sls-poweroff`** → app Quit exit 10 actually powers off  
 4. **`overlay/usr/local/bin/sls-audio-speakers`** + service (OUT volume + Speaker/HP)  
 5. Kinect EULA debconf preseed before seed apt  
+6. **`overlay/usr/local/bin/sls-camera`** → default **`--no-auto-level`** (no motor)  
+7. **`overlay/usr/share/applications/sls-camera.desktop`** → menu + Desktop icon  
+8. **`overlay/etc/polkit-1/rules.d/60-sls-timedate.rules`** + `sudoers.d/sls-timedate`  
+9. Pin current app (`packages/app-ref.txt` + `20-sync-app.sh`) — battery UI, TTS async, etc.
 
-Verify after tablet install: `systemd-analyze` (loader ≪ 30 s), autologin, `sudo -n /usr/sbin/poweroff --help`, DrakeVox audible.
+Verify after tablet install: `systemd-analyze` (loader ≪ 30 s), autologin, `sudo -n /usr/sbin/poweroff --help`, DrakeVox audible, `which sls-camera` + menu entry, motor quiet on open.
 BOOT
 
 # README for humans opening the stick in a file manager

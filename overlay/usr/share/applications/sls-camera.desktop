@@ -1,0 +1,13 @@
+[Desktop Entry]
+Type=Application
+Version=1.0
+Name=SLS Camera
+GenericName=SLS field app
+Comment=SLS Camera field app (fullscreen appliance)
+Exec=/usr/local/bin/sls-camera
+Icon=camera-video
+Terminal=false
+Categories=AudioVideo;Science;Utility;
+Keywords=SLS;Kinect;camera;field;
+StartupNotify=false
+X-SLS-Camera-Firmware=1

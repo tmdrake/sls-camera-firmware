@@ -402,7 +402,34 @@ deactivate
 chown -R "$SLS_USER:$SLS_USER" "$VIEWER/.venv" 2>/dev/null || true
 
 # launcher (Quit → poweroff by default; see SLS_ON_QUIT in overlay launcher)
+# Field default: injects --no-auto-level (no Kinect tilt motor; lab: SLS_KINECT_AUTO_LEVEL=1)
 install -D -m 755 "$OVERLAY/usr/local/bin/sls-camera" /usr/local/bin/sls-camera
+
+# Menu entry so the app is visible after Quit (Phase 1 keeps the desktop)
+if [[ -f "$OVERLAY/usr/share/applications/sls-camera.desktop" ]]; then
+  install -D -m 644 "$OVERLAY/usr/share/applications/sls-camera.desktop" \
+    /usr/share/applications/sls-camera.desktop
+  # Desktop shortcut for sls (LXQt shows Desktop folder). Some images ship
+  # Desktop with chattr +i (immutable) — clear briefly if we can.
+  _desk_home="$(getent passwd "$SLS_USER" | cut -d: -f6)"
+  _desk_home="${_desk_home:-/home/$SLS_USER}"
+  if [[ -d "$_desk_home" ]]; then
+    mkdir -p "$_desk_home/Desktop" 2>/dev/null || true
+    if [[ -d "$_desk_home/Desktop" ]] && command -v chattr >/dev/null 2>&1; then
+      chattr -i "$_desk_home/Desktop" 2>/dev/null || true
+    fi
+    if cp -f "$OVERLAY/usr/share/applications/sls-camera.desktop" \
+      "$_desk_home/Desktop/sls-camera.desktop" 2>/dev/null; then
+      chown "$SLS_USER:$SLS_USER" "$_desk_home/Desktop/sls-camera.desktop" 2>/dev/null || true
+      chmod 644 "$_desk_home/Desktop/sls-camera.desktop" 2>/dev/null || true
+      echo "Installed menu + Desktop launcher: SLS Camera"
+    else
+      echo "Installed menu launcher: SLS Camera (Desktop shortcut skipped — folder not writable)"
+    fi
+  else
+    echo "Installed menu launcher: SLS Camera"
+  fi
+fi
 
 # passwordless poweroff for appliance user (launcher fallback)
 if [[ -f "$OVERLAY/etc/sudoers.d/sls-poweroff" ]]; then
@@ -585,11 +612,14 @@ fi
 
 echo
 echo "=== Appliance install complete ==="
-echo "  App:      $APP_ROOT"
+echo "  App:      $APP_ROOT  (tree + venv)"
 echo "  Launcher: /usr/local/bin/sls-camera"
+echo "  Menu:     Applications → SLS Camera  (+ Desktop/sls-camera.desktop)"
 echo "  Captures: $DATA_CAPTURES"
 echo "  User:     $SLS_USER (autostart enabled)"
+echo "  Kinect:   field default --no-auto-level (no tilt motor); lab: SLS_KINECT_AUTO_LEVEL=1"
 echo
 echo "Reboot, plug Kinect + power brick (operate 12V path), and the SLS app should start."
+echo "If you land on the desktop: click SLS Camera or run:  sls-camera   or   sls-camera --demo"
 echo "Kinect mic: installed when network was available (kinect-audio-setup); else spectrum uses default mic."
 echo "  Offline skip / re-run: SLS_OFFLINE=1 | with net: sudo apt install -y kinect-audio-setup && replug Kinect"

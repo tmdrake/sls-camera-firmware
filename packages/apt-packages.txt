@@ -8,7 +8,9 @@
 # Note: Ubuntu 24.04+ uses t64 transition names (libfreenect0.5t64).
 # Older releases may use libfreenect0.5 — fetch script resolves both.
 
-# --- Kinect depth / IR / motor (app freenect path) — required offline ---
+# --- Kinect depth / IR / motor stack (freenect) — required offline ---
+# Field default: launcher injects --no-auto-level (no tilt motor on open; LED still green).
+# Packages stay — motor driver is part of freenect; lab may set SLS_KINECT_AUTO_LEVEL=1.
 freenect
 libfreenect-bin
 libfreenect0.5t64
@@ -34,6 +36,10 @@ libxkbcommon0
 libegl1
 libxcb-cursor0
 libdbus-1-3
+# X11 helpers used by launcher (DPMS off, landscape lock) — stock Lubuntu has these;
+# seed for minimal/offline images that strip recommends
+x11-xserver-utils
+x11-utils
 # Useful field tools
 curl
 ca-certificates

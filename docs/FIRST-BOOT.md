@@ -27,6 +27,18 @@ After install on a blank Ubuntu/Lubuntu system:
 5. Session autostart: **landscape lock** + DPMS off, then **`/usr/local/bin/sls-camera`** as `sls`  
 6. SLS app opens fullscreen (expect width ≥ height; native portrait panels are rotated)  
 
+**Where is the app if you don’t see it?**
+
+| Path | Role |
+|------|------|
+| `/usr/local/bin/sls-camera` | Launcher (in `$PATH`) |
+| `/opt/sls-camera/` | App tree + `software/linux/viewer/` venv |
+| **Applications menu → SLS Camera** | Desktop entry from install |
+| `~/Desktop/sls-camera.desktop` | Shortcut on Lubuntu desktop |
+| `~/.config/autostart/sls-camera.desktop` | Auto-start on login |
+
+Manual smoke (no Kinect): `sls-camera --demo` or `DISPLAY=:0 sls-camera --demo`.
+
 **Desktop still present:** install does **not** remove Lubuntu/LXQt. The app covers it; if the app exits, you get the normal desktop. Full chrome strip is **Phase 3** — [KIOSK-DESKTOP.md](KIOSK-DESKTOP.md). “Harden” today mainly means unused **services** ([HARDEN-HARDWARE.md](HARDEN-HARDWARE.md)), not deleting the DE.
 
 If a temporary ISO install user still exists (e.g. leftover desktop scrap), remove it and keep only **`sls`** — see [VM-REBUILD.md](VM-REBUILD.md).
@@ -37,10 +49,22 @@ Use a **current SLS-MEDIA** stick (`scripts/50-build-field-usb.sh`; host: `APP_S
 
 1. **Wipe** — Lubuntu 26.04 amd64 UEFI, full disk; Secure Boot Off.  
 2. Boot to eMMC → plug **SLS-MEDIA** → `bash install-from-usb.sh`.  
-3. Expect install to apply: freenect/Kinect audio seeds, landscape, quiet session, **SDDM autologin + Relogin**, **`/etc/sudoers.d/sls-poweroff`** (Quit → power off), HW harden, **GRUB recordfail=0**, **RCA speakers** (SST + OUT volume), backlight udev, PMIC stabilize.  
+3. Expect install to apply: freenect/Kinect audio seeds, landscape, quiet session, **SDDM autologin + Relogin**, **`/etc/sudoers.d/sls-poweroff`** (Quit → power off), HW harden, **GRUB recordfail=0**, **RCA speakers** (SST + OUT volume), backlight udev, PMIC stabilize, **menu + Desktop launcher**, **`--no-auto-level`** (no motor).  
 4. **Cold power cycle** (especially RCA).  
 5. Lab: **unplug OTG** for touch/audio soak after bring-up.  
-6. Verify: **fast GRUB** (below), app autostart, brightness ±, DrakeVox audible on RCA, Kinect depth when 12 V OK.
+6. Verify: **fast GRUB** (below), app autostart (or menu **SLS Camera**), brightness ±, DrakeVox audible on RCA, Kinect depth when 12 V OK, **tilt motor does not move** on open.
+
+### Kinect tilt / “no motor” (field default)
+
+Fixed field mounts must not command the tilt motor. The appliance launcher injects **`--no-auto-level`** unless already present:
+
+| Setting | Behavior |
+|---------|----------|
+| Default | No `freenect_set_tilt_degs` on open (LED still green) |
+| Lab auto-level | `SLS_KINECT_AUTO_LEVEL=1 sls-camera` (or pass without `--no-auto-level` after unsetting) |
+| App flag | `./run.sh --no-auto-level` (same contract as [sls-camera#10](https://github.com/tmdrake/sls-camera/issues/10)) |
+
+`freenect` packages remain installed — depth/IR need them; only **motor move on open** is disabled.
 
 ### GRUB / “EFI” long boot delay (part of setup — all tablets)
 

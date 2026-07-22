@@ -94,7 +94,9 @@ See [docs/OFFLINE-MIRROR.md](docs/OFFLINE-MIRROR.md).
 — blow-and-go index, offline apt, quit exit 10, **16:10**, polkit format/timedate rules, **`--no-auto-level`**, smoke checklist.  
 App day log (2026-07-22): [SESSION-2026-07-22.md](https://github.com/tmdrake/sls-camera/blob/main/software/linux/docs/SESSION-2026-07-22.md).
 
-**Kinect tilt (field):** launcher injects **`--no-auto-level`** by default (no motor move on open). Lab: `SLS_KINECT_AUTO_LEVEL=1` to allow auto-level. LED stays on.
+**Kinect tilt (field):** launcher injects **`--no-auto-level`** by default (no motor move on open). Lab: `SLS_KINECT_AUTO_LEVEL=1` to allow auto-level. LED stays on. freenect packages stay installed for depth/IR.
+
+**Where the app lives after install:** `/opt/sls-camera` + `/usr/local/bin/sls-camera`, plus **Applications → SLS Camera** and `~/Desktop/sls-camera.desktop`. Autostart still launches on login. Demo without Kinect: `sls-camera --demo`.
 
 **TTS / performance smoke:** pin guest to **2 GiB / 2 vCPU** ([VM-REBUILD.md](docs/VM-REBUILD.md) tablet-class, `scripts/vm-tablet-class-resources.sh`) — [sls-camera#13](https://github.com/tmdrake/sls-camera/issues/13).
 
