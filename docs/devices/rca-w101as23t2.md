@@ -25,7 +25,7 @@
 | Resolution (Windows) | **800 × 1280 @ 59 Hz** | Native **portrait**; appliance locks **1280×800** landscape |
 | Storage | **Biwin ~28.8 GB** fixed disk | ~28 GB C: NTFS, ~16.6 GB free at capture time |
 | Free for Linux | Tight if dual-boot; full wipe OK for appliance | Aim minimal install |
-| Touch | **Goodix** (`GDIX1002:00`) | **Intermittent I2C death** on Linux (probe -110); cold boot often fixes — [TOUCH-GOODIX.md](../TOUCH-GOODIX.md) |
+| Touch | **Goodix** (`GDIX1002:00`) | **Intermittent I2C death** on Linux (probe -110); **cold power-off** best fix; soft helper at boot — see [PMIC / warm reboot](#pmic--warm-reboot-vs-cold-start-rca-lab) · [TOUCH-GOODIX.md](../TOUCH-GOODIX.md) |
 | USB | Intel USB 3.0 xHCI (22B5) | Prefer direct port for Kinect |
 | Windows | 10 Home 19044 | Wipe candidate for Stage A field USB |
 
@@ -36,7 +36,7 @@
 3. **Landscape lock:** native glass is **800×1280** portrait; firmware forces **1280×800** via `sls-lock-landscape` with **`SLS_LANDSCAPE_ROTATE=right`** + touch CTM/map-to-output (live-validated fleet policy).  
 4. **~29 GB eMMC:** full-disk Lubuntu + `/opt/sls-camera` venv is OK; leave room for `/data/sls-captures`.  
 5. **Kinect:** external brick + USB; after wipe, no VM passthrough script.  
-6. **Goodix touch:** first boot checklist item — if no touch, keyboard/SSH fallback.  
+6. **Goodix / PMIC:** first boot checklist — if no touch, keyboard/SSH fallback; prefer **cold power-off** over soft reboot when platform is weird; appliance enables soft stabilize — [PMIC section](#pmic--warm-reboot-vs-cold-start-rca-lab).  
 
 ## Linux driver reality (lab 2026-07)
 
@@ -46,6 +46,7 @@ This unit **can** run the SLS appliance (Lubuntu 26.04, autologin, app, quit→p
 |------|---------------------|
 | **SLS app path** | Works once install + Kinect 12 V are right |
 | **Goodix touch** | Usually OK in field (**OTG port not used** for normal SLS). Lab only: hub/NIC on **OTG** killed Goodix (I2C -110); unplug restored touch — [TOUCH-GOODIX.md](../TOUCH-GOODIX.md) |
+| **PMIC / warm reboot** | Soft reboot often leaves **weird** touch/I2C/charge state; **cold start** fixes most. Software helper mitigates, does not replace cold off — [below](#pmic--warm-reboot-vs-cold-start-rca-lab) |
 | **Boot delay ~30 s** | Usually GRUB **recordfail** after hard off (fixed with `GRUB_RECORDFAIL_TIMEOUT=0`) — [EFI-BOOT.md](../EFI-BOOT.md); residual OEM EFI quirks possible |
 | **UEFI** | **ia32** GRUB on 32-bit firmware + amd64 OS — normal for this class, still fiddly |
 | **Kinect** | Not a tablet driver issue if only `02b0`; **12 V / charger path** — [kinect-portable-power.md](kinect-portable-power.md) |
@@ -54,6 +55,59 @@ This unit **can** run the SLS appliance (Lubuntu 26.04, autologin, app, quit→p
 | **i2c / pinctrl** | Occasional designware timeouts, pinctrl probe errors — same generation as touch flakiness |
 
 **Takeaway for BOM:** fine as a **lab / wipe-load proving** tablet; for **production fleet**, prefer a better-supported SoC (e.g. N100-class) if driver tax stays high. Do not over-invest in Goodix/ACPI heroics on this chassis unless volume forces it.
+
+### PMIC / warm reboot vs cold start (RCA lab)
+
+**Observed (tablet-01, 2026-07):** after a **soft reboot** (`reboot`, app restart path that does not drop rails), the unit can do “weird stuff” — Goodix missing or flaky (I2C **-110**), designware timeouts, AXP288 charge UI lies (`online=0` while LED charges). A **cold start** (full power-off, rails actually drop, then boot) reliably clears most of that.
+
+| Kind of reset | What it does on this chassis | When to use |
+|---------------|------------------------------|-------------|
+| **Cold start** | Power **off** long enough for **AXP288 / EC / I2C rails** to drop, then power on | Gold standard when touch is dead, OTG role stuck, or “everything is weird” after soft reboot |
+| **Warm / soft reboot** | Kernel restarts; **PMIC often stays live** | Everyday restart; may leave Goodix/I2C wedged |
+| **Software stabilize** | Delayed oneshot after boot (below) | Best-effort recovery of **many** warm-boot Goodix failures — **not** a rail reset |
+
+**Why cold works:** Cherry Trail + vendor ACPI + **AXP288** leave touch rails poorly described (dummy `AVDD28`/`VDDIO` in dmesg). Soft reboot does not re-sequence those paths the way a full power cut does. Software cannot fully fake a PMIC hard reset.
+
+#### Software helper (enabled on appliance install)
+
+Install enables **`sls-pmic-startup-stabilize.service`** → `/usr/local/bin/sls-pmic-startup-stabilize` (config `/etc/sls/pmic-startup.conf`).
+
+After multi-user (~**12 s** delay, then up to **3** retries):
+
+1. Force runtime PM **`on`** for designware I2C (`808622C1:*`) and Goodix sysfs paths  
+2. If no Goodix input / unbound `GDIX1002:00` → unbind / `modprobe` / rebind **goodix_ts**  
+3. Log: `/data/sls-captures/pmic-startup.log` (fallback `/var/log/sls-pmic-startup.log`)
+
+```bash
+systemctl status sls-pmic-startup-stabilize
+tail /data/sls-captures/pmic-startup.log
+# disable if needed: ENABLED=0 in /etc/sls/pmic-startup.conf
+```
+
+| Expect | Do not expect |
+|--------|----------------|
+| Warm reboot recovers Goodix more often without operator action | Fix when OTG still brownouts the bus (unplug / use powered hub first) |
+| Log line `Goodix recovered` / `Goodix present` | Replace cold start for hard-wedged PMIC |
+| Safe no-op when touch already healthy | Fix wake-on-AC (BIOS/EC — ignore for SW) |
+
+Shared detail / manual rebind: [TOUCH-GOODIX.md](../TOUCH-GOODIX.md).
+
+#### Operator recovery order (this RCA)
+
+1. **Lab only:** if OTG has hub/NIC load and touch is dead → unplug OTG or use **self-powered** hub; re-check `xinput`.  
+2. Soft rebind / wait for **`sls-pmic-startup-stabilize`** (or run the script once as root).  
+3. **Cold power cycle:** app Quit → power off (or `poweroff`); wait until fully off; power on; confirm Goodix before relying on touch.  
+4. Keep USB mouse/keyboard available for setup when touch is dead.
+
+#### Field vs lab on this unit
+
+| Context | Guidance |
+|---------|----------|
+| **Field investigations** | OTG **not** used for normal SLS; cold power-off if touch/platform is weird after a soft reboot |
+| **Lab (SSH / stick on OTG)** | Prefer **powered hub**; expect more PMIC/I2C stress than field |
+| **Preferred shutdown** | Full **poweroff** (app exit 10 / Quit) over casual soft reboot when closing a session |
+
+**Deploy note:** helper is in firmware (`sls-pmic-startup-stabilize`); enable on unit if missing after older install. TMAX (tablet-02) is the HW/SW control — do not assume this RCA PMIC tax applies there until proven.
 
 ### OTG port (RCA)
 

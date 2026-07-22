@@ -94,8 +94,8 @@ xinput list | grep -i goodix
 
 ## Firmware / field notes
 
-- Document on device pages: **touch flaky — cold boot if dead**.  
-- Optional later: delayed `systemd` oneshot that rebinds Goodix 10–15 s after graphical session (race mitigation), not a guaranteed fix.  
+- **RCA tablet-01:** device-specific PMIC / cold-vs-warm notes — [devices/rca-w101as23t2.md](devices/rca-w101as23t2.md#pmic--warm-reboot-vs-cold-start-rca-lab).  
+- Delayed oneshot **`sls-pmic-startup-stabilize`** is installed on appliance (I2C PM on + Goodix rebind); still not a guaranteed fix when rails are wedged.  
 - Do **not** blame landscape rotate first when `xinput` has no touch device.  
 - Phase 3 kiosk still needs keyboard/SSH fallback when touch is dead.
 
