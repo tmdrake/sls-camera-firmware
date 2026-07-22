@@ -205,11 +205,11 @@ UCM (`/usr/share/alsa/ucm2/codecs/rt5651/HeadPhones.conf`) turns **Speaker off**
 
 | Piece | Role |
 |-------|------|
-| `/usr/local/bin/sls-audio-speakers` | UCM **Speaker** enable: Speaker/LOUT **on**, HPO/Headphone **off**, LOUT MIX DAC on |
+| `/usr/local/bin/sls-audio-speakers` | Speaker **and** Headphone/HPO **on**, LOUT MIX DAC on, **OUT=39** |
 | `sls-audio-speakers.service` | Boot oneshot + re-run after ~8 s (after UCM/WirePlumber settle) |
 | App `sls_viewer/tts.py` | Same on **every** DrakeVox speak |
 
-Why PipeWire still says **Headphones**? UCM *name* for the default sink — not “no speakers.” Trust **Speaker Switch [on]** + OUT volume, not the sink label.
+Why PipeWire says **Headphones**? That is the UCM default sink name. Streams (eSpeak, DrakeVox/`sounddevice`) play to it — so **do not mute HPO** or the panel can stay silent even with Speaker on. Keep both paths on + OUT volume.
 
 #### Fix part 3 — `OUT Playback Volume` (setup critical)
 

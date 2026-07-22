@@ -1,6 +1,12 @@
 #!/usr/bin/env bash
-# Force internal speakers on bytcr-rt5651 (RCA) when Headphone Jack is stuck ON.
-# UCM prefers Headphones (priority 200 + jack) and mutes Speaker — silent panel.
+# RCA / bytcr-rt5651 panel audio bring-up (install + boot + DrakeVox).
+#
+# Failures this covers (all required for sound):
+#  1) False Headphone Jack → UCM Speaker off
+#  2) OUT Playback Volume left at 0,0 → silent at PipeWire 100%
+#  3) PipeWire default sink is UCM "Headphones" — if HPO is forced off while
+#     streams play to that sink, panel stays silent. Keep Speaker + HP paths on.
+#
 # Safe no-op when no Speaker control exists.
 set -u
 
@@ -10,19 +16,20 @@ for card in 0 1 2 3; do
   if ! amixer -c"$card" sget Speaker >/dev/null 2>&1; then
     continue
   fi
-  _log "card $card: enabling Speaker path + OUT volume (UCM often leaves OUT at 0)"
+  _log "card $card: Speaker+HP paths on, OUT volume max"
   amixer -c"$card" -q cset name='Speaker Switch' on 2>/dev/null || true
   amixer -c"$card" -q cset name='LOUT L Playback Switch' on 2>/dev/null || true
   amixer -c"$card" -q cset name='LOUT R Playback Switch' on 2>/dev/null || true
   amixer -c"$card" -q cset name='LOUT MIX DAC L1 Switch' on 2>/dev/null || true
   amixer -c"$card" -q cset name='LOUT MIX DAC R1 Switch' on 2>/dev/null || true
-  amixer -c"$card" -q cset name='Headphone Switch' off 2>/dev/null || true
-  amixer -c"$card" -q cset name='HPO L Playback Switch' off 2>/dev/null || true
-  amixer -c"$card" -q cset name='HPO R Playback Switch' off 2>/dev/null || true
-  # Critical on RCA: OUT Playback Volume often 0,0 after UCM → silent despite Speaker on
+  # Keep HP path on: PipeWire sink is often "Headphones"; muting HPO = silent
+  amixer -c"$card" -q cset name='Headphone Switch' on 2>/dev/null || true
+  amixer -c"$card" -q cset name='HPO L Playback Switch' on 2>/dev/null || true
+  amixer -c"$card" -q cset name='HPO R Playback Switch' on 2>/dev/null || true
+  amixer -c"$card" -q sset Headphone 100% unmute 2>/dev/null || true
+  # Critical: UCM often leaves OUT at 0,0
   amixer -c"$card" -q cset name='OUT Playback Volume' 39 2>/dev/null || true
   amixer -c"$card" -q sset Speaker on 2>/dev/null || true
-  amixer -c"$card" -q sset Headphone 100% 2>/dev/null || true
   if command -v wpctl >/dev/null; then
     export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/1000}"
     wpctl set-mute @DEFAULT_AUDIO_SINK@ 0 2>/dev/null || true

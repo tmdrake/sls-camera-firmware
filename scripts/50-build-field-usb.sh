@@ -223,11 +223,22 @@ cd /media/$USER/SLS-MEDIA    # or /run/media/$USER/SLS-MEDIA
 bash install-from-usb.sh
 ```
 
+Install applies (must not skip on rebuild):
+
+| Setup item | What |
+|------------|------|
+| **GRUB fast loader** | `GRUB_RECORDFAIL_TIMEOUT=0` + `grub.d/50-sls-recordfail.cfg` — no ~30–38 s “EFI” hang after hard power-off ([EFI-BOOT.md](docs/EFI-BOOT.md)). Lab: loader ~6 s when set. |
+| **SDDM autologin** | `User=sls`, `Session=Lubuntu`, **`Relogin=true`** |
+| **RCA speakers** | SST + `sls-audio-speakers` (Speaker/HP path + **OUT volume 39**) |
+| Backlight / PMIC / Kinect seeds | As in install-appliance |
+
 ### 4. Reboot
 
-- Autologin: **sls**
+- Prefer **cold power-off → power on** on RCA after first install (SST/I2C).
+- Autologin: **sls** (no greeter)
 - Lab password: **20260717** — change on production hardware
 - App should start; Quit → power off (exit 10 + launcher)
+- Boot should be **fast at GRUB** — if ~30 s delay returns, re-check `RECORDFAIL` (see EFI-BOOT.md)
 
 ### 5. Kinect audio (**required** for spectrum / Record mic)
 
@@ -251,9 +262,21 @@ Build host must run `./scripts/10-fetch-offline.sh` so the stick has `kinect-aud
 
 ```bash
 cd ~/sls-camera-firmware
+# Prefer local app tree when unpushed field fixes matter:
+#   APP_SRC=~/sls-camera ./scripts/20-sync-app.sh
 ./scripts/10-fetch-offline.sh && ./scripts/20-sync-app.sh
-sudo ./scripts/50-build-field-usb.sh /dev/sdX1
+./scripts/50-build-field-usb.sh /run/media/$USER/SLS-MEDIA
+# or: sudo ./scripts/50-build-field-usb.sh /dev/sdX1
 ```
+
+**When rebuilding the installer/stick, keep these setup fixes in the tree** (do not regress):
+
+1. **`overlay/etc/default/grub.d/50-sls-recordfail.cfg`** + install-appliance GRUB block → fast loader  
+2. **`overlay/etc/sddm.conf.d/50-sls-autologin.conf`** (`Relogin=true`)  
+3. **`overlay/usr/local/bin/sls-audio-speakers`** + service (OUT volume + Speaker/HP)  
+4. Kinect EULA debconf preseed before seed apt  
+
+Verify after tablet install: `systemd-analyze` (loader ≪ 30 s), autologin, DrakeVox audible.
 BOOT
 
 # README for humans opening the stick in a file manager
@@ -266,9 +289,10 @@ SLS Camera — field USB (Stage A blow-and-go)
 4) Kinect AUDIO (required for spectrum/Record mic):
      cd firmware && sudo ./scripts/install-kinect-audio-on-target.sh
      Unplug/replug Kinect; arecord -l
-5) Reboot. Autologin: sls
+5) Cold power cycle (RCA). Autologin: sls. GRUB should be FAST (no ~30s hang).
+6) DrakeVox sound: speakers need OUT volume — install runs sls-audio-speakers.
 
-Details: BOOTSTRAP.md
+Details: BOOTSTRAP.md · docs/EFI-BOOT.md · docs/FIRST-BOOT.md
 Captures folder: sls-captures/
 Test tablet today: RCA W101AS23T2 + Kinect
 EOF
