@@ -17,7 +17,7 @@ Disable or mask **services and modules we do not use**, not “break Kinect.”
 
 | Journal / symptom | Needed for SLS? | Harden action |
 |-------------------|-----------------|---------------|
-| `sof-audio-acpi-intel-byt` no ASoC machine | No (Kinect mic is USB UAC; tablet SOF often broken) | Leave module; ignore or blacklist tablet SOF if no speakers needed |
+| `sof-audio-acpi-intel-byt` no ASoC machine | **RCA speakers needed** | Do **not** only ignore — force **SST** + Speaker path on RCA; see [rca-w101as23t2.md](devices/rca-w101as23t2.md#rca-speaker-fix-full-stack-lab-validated-2026-07). Kinect mic remains USB UAC. |
 | `bluetoothd` / Failed to set mode | **No** field | **mask** `bluetooth.service` |
 | `ModemManager` | **No** (no WWAN) | **mask** `ModemManager.service` |
 | `thermald` No Zones | No useful thermal on this ACPI | **disable** thermald if present |

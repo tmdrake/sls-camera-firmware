@@ -7,7 +7,7 @@ App tracking: [sls-camera#7](https://github.com/tmdrake/sls-camera/issues/7) · 
 
 | Unit ID | Role | Device doc | OS now | Wipe status |
 |---------|------|------------|--------|-------------|
-| **tablet-01** | RCA W101AS23T2 | [rca-w101as23t2.md](rca-w101as23t2.md) | native 800×1280 → **1280×800** locked | Lab wiped; OTG **lab only** (stick/NIC; prefer powered hub) |
+| **tablet-01** | RCA W101AS23T2 | [rca-w101as23t2.md](rca-w101as23t2.md) | native 800×1280 → **1280×800** locked | Lab wiped; OTG **lab only**; **speaker fix** SST+force Speaker ([detail](rca-w101as23t2.md#rca-speaker-fix-full-stack-lab-validated-2026-07)) |
 | **tablet-02** | TMAX TM800W610L | [tablet-02.md](tablet-02.md) | Win10 x64, native 1200×1920 → **1920×1200** locked | **OTG required** (charge/control circuit) |
 | **kinect-kit** | Shared sensor + power | [kinect-portable-power.md](kinect-portable-power.md) | n/a | Both tablets + portable PSU |
 

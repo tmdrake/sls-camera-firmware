@@ -37,6 +37,7 @@
 4. **~29 GB eMMC:** full-disk Lubuntu + `/opt/sls-camera` venv is OK; leave room for `/data/sls-captures`.  
 5. **Kinect:** external brick + USB; after wipe, no VM passthrough script.  
 6. **Goodix / PMIC:** first boot checklist — if no touch, keyboard/SSH fallback; prefer **cold power-off** over soft reboot when platform is weird; appliance enables soft stabilize — [PMIC section](#pmic--warm-reboot-vs-cold-start-rca-lab).  
+7. **Speakers / DrakeVox:** apply **full RCA audio fix** (SST + force Speaker path) — [below](#rca-speaker-fix-full-stack-lab-validated-2026-07). Lab: **unplug OTG** when debugging.  
 
 ## Linux driver reality (lab 2026-07)
 
