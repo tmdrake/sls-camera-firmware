@@ -90,7 +90,6 @@ rsync -rltD --delete \
   --exclude 'build/get-pip.py' \
   --exclude 'out/' \
   --exclude 'docs/images/*.ppm' \
-  --exclude 'screenshots/*.ppm' \
   --exclude '.grok/' \
   "$ROOT/" "$MNT/firmware/"
 # Scripts must be executable when copied to ext4 later; on FAT, install-from-usb uses bash

@@ -229,12 +229,12 @@ journalctl -u sddm -b
 ```
 ### Screenshots (Phase 1 VM — Lubuntu 26.04)
 
-Full-size images live in [`screenshots/`](../screenshots/README.md).
+Full-size images live in [`docs/images/`](images/README.md) (repo shortcut: `screenshots` → `docs/images`).
 
 | | |
 |--|--|
-| Desktop after install | ![Lubuntu desktop](../screenshots/01-guest-desktop.png) |
-| SLS Camera `--demo` | ![SLS demo UI](../screenshots/02-sls-demo-app.png) |
+| Desktop after install | ![Lubuntu desktop](images/01-guest-desktop.png) |
+| SLS Camera `--demo` | ![SLS demo UI](images/02-sls-demo-app.png) |
 
 Operator should only need:
 
