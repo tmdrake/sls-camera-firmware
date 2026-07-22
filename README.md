@@ -35,7 +35,7 @@ The **application source of truth** remains **`sls-camera`**. This repo is packa
 
 ### Screenshots (Phase 1 VM)
 
-See [docs/FIRST-BOOT.md](docs/FIRST-BOOT.md) and [docs/images/](docs/images/README.md) — Lubuntu desktop + SLS `--demo` UI.
+See [docs/FIRST-BOOT.md](docs/FIRST-BOOT.md) and [screenshots/](screenshots/README.md) — Lubuntu desktop + SLS `--demo` UI.
 
 ### Rebuild the test VM
 

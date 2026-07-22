@@ -373,7 +373,7 @@ After a **guest reboot**, run `./scripts/vm-kinect-usb.sh reattach` if freenect 
 - [ ] `/usr/local/bin/sls-camera` works (`--demo` or live Kinect)  
 - [ ] No update / power-management popups after login  
 - [ ] Captures under `/data/sls-captures` when snapping  
-- [ ] Screenshots / notes: [FIRST-BOOT.md](FIRST-BOOT.md), [images/](images/README.md)  
+- [ ] Screenshots / notes: [FIRST-BOOT.md](FIRST-BOOT.md), [screenshots/](../screenshots/README.md)  
 
 ---
 
