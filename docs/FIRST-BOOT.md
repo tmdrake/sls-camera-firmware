@@ -37,10 +37,28 @@ Use a **current SLS-MEDIA** stick (`scripts/50-build-field-usb.sh`; host: `APP_S
 
 1. **Wipe** — Lubuntu 26.04 amd64 UEFI, full disk; Secure Boot Off.  
 2. Boot to eMMC → plug **SLS-MEDIA** → `bash install-from-usb.sh`.  
-3. Expect install to apply: freenect/Kinect audio seeds, landscape, quiet session, HW harden services, **RCA speakers** (SST + `sls-audio-speakers`), backlight udev, PMIC stabilize (when overlay present).  
+3. Expect install to apply: freenect/Kinect audio seeds, landscape, quiet session, HW harden services, **RCA speakers** (SST + `sls-audio-speakers` incl. **OUT volume**), backlight udev, PMIC stabilize (when overlay present).  
 4. **Cold power cycle** (especially RCA).  
 5. Lab: **unplug OTG** for touch/audio soak after bring-up.  
-6. Verify: app autostart, brightness ±, DrakeVox audio (RCA: `aplay -l` shows `bytcrrt5651`, `amixer -c1 sget Speaker` on), Kinect depth when 12 V OK.
+6. Verify: app autostart, brightness ±, DrakeVox **audible** on RCA — see checklist below; Kinect depth when 12 V OK.
+
+### RCA speaker setup (part of install — tablet-01)
+
+Install must leave all three layers healthy (detail: [rca-w101as23t2.md](devices/rca-w101as23t2.md#rca-speaker-fix-full-stack-lab-validated-2026-07)):
+
+| Step | What | Check |
+|------|------|--------|
+| 1 | SST not SOF | `aplay -l` → `bytcrrt5651` |
+| 2 | Speaker path (not false HP-only) | `amixer -c1 sget Speaker` → **[on]** |
+| 3 | **OUT Playback Volume** | `amixer -c1 cget name='OUT Playback Volume'` → **39,39** (not **0,0**) |
+
+`sls-audio-speakers.service` + app DrakeVox speak run steps 2–3. If DrakeVox is silent but steps 1–2 look OK, step 3 was the wipe-lab failure mode.
+
+```bash
+systemctl is-enabled sls-audio-speakers
+sudo /usr/local/bin/sls-audio-speakers   # re-apply if quiet
+espeak-ng -a 200 "test"
+```
 
 Stick rebuild + Stage A layout: [ISO-AND-FIELD-USB.md](ISO-AND-FIELD-USB.md).
 

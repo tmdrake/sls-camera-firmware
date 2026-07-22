@@ -179,7 +179,7 @@ sudo poweroff   # then power on
 | Quit | Power off (app exit 10 + launcher) |
 | Captures | `/data/sls-captures` and/or stick `sls-captures/` if Auto + mounted |
 | Spectrum / REC mic | Kinect array if step **3** completed; else tablet default mic |
-| RCA speakers | `bytcr-rt5651` + Speaker on — [rca speaker fix](devices/rca-w101as23t2.md#rca-speaker-fix-full-stack-lab-validated-2026-07) |
+| RCA speakers | `bytcr-rt5651` + Speaker **on** + **`OUT Playback Volume` 39,39** (not 0,0) — [setup](devices/rca-w101as23t2.md#rca-speaker-fix-full-stack-lab-validated-2026-07) |
 
 **7. Kinect sensor (depth)**
 

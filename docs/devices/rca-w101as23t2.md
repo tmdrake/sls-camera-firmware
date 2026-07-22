@@ -53,7 +53,7 @@ This unit **can** run the SLS appliance (Lubuntu 26.04, autologin, app, quit→p
 | **UEFI** | **ia32** GRUB on 32-bit firmware + amd64 OS — normal for this class, still fiddly |
 | **Kinect** | Not a tablet driver issue if only `02b0`; **12 V / charger path** — [kinect-portable-power.md](kinect-portable-power.md) |
 | **CPU / RAM** | Z8350 + **2 GB** — MediaPipe is CPU-bound; usable, not snappy — [PERFORMANCE.md](../PERFORMANCE.md) |
-| **Audio / speakers** | RT5651 present. Needs **two-part fix**: (1) SST not SOF (2) force Speaker (false HP jack). Full recipe — [RCA speaker fix](#rca-speaker-fix-full-stack-lab-validated-2026-07) |
+| **Audio / speakers** | RT5651 present. Needs **three-part fix**: (1) SST not SOF (2) force Speaker path (3) **OUT Playback Volume ≠ 0**. Recipe — [RCA speaker fix](#rca-speaker-fix-full-stack-lab-validated-2026-07) |
 | **i2c / pinctrl** | Occasional designware timeouts, pinctrl probe errors — same generation as touch flakiness |
 
 **Takeaway for BOM:** fine as a **lab / wipe-load proving** tablet; for **production fleet**, prefer a better-supported SoC (e.g. N100-class) if driver tax stays high. Do not over-invest in Goodix/ACPI heroics on this chassis unless volume forces it.

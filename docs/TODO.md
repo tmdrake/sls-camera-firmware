@@ -48,7 +48,7 @@
 - [x] **Disable unused OS hardware/services** — BT, modem, cups, apport, fwupd, thermald noise; conf in `/etc/sls/harden-hw.conf` — [HARDEN-HARDWARE.md](HARDEN-HARDWARE.md)  
 - [x] **PMIC/Goodix warm-boot stabilize** — `sls-pmic-startup-stabilize` (I2C PM on + delayed rebind); cold power-off still gold standard — [TOUCH-GOODIX.md](TOUCH-GOODIX.md)  
 - [x] **Brightness Settings on RCA** — udev video-group write + brightnessctl seed; app prefers intel_backlight; docs on device page — [rca-w101as23t2.md](devices/rca-w101as23t2.md#brightness-settings-rca)  
-- [x] **RCA panel speakers / DrakeVox** — SST force (`dsp_driver=2`) + `sls-audio-speakers` (false HP jack); cold reboot caution; lab unplug OTG — [rca-w101as23t2.md](devices/rca-w101as23t2.md#rca-speaker-fix-full-stack-lab-validated-2026-07)
+- [x] **RCA panel speakers / DrakeVox** — SST + Speaker path + **OUT Playback Volume 39** (0,0 = silent); boot script + TTS; cold reboot; OTG lab note — [rca-w101as23t2.md](devices/rca-w101as23t2.md#rca-speaker-fix-full-stack-lab-validated-2026-07)
 - [ ] **Kiosk desktop cleanup** — strip stock Lubuntu/LXQt chrome (see [KIOSK-DESKTOP.md](KIOSK-DESKTOP.md))  
   - Note: today **desktop does not go away** — only services harden + app fullscreen; Phase 3 = real chrome strip  
   - [ ] Hide/remove panel, desktop icons, file-manager desktop, noisy applets  
