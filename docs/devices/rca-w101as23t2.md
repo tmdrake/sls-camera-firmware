@@ -52,7 +52,7 @@ This unit **can** run the SLS appliance (Lubuntu 26.04, autologin, app, quit→p
 | **UEFI** | **ia32** GRUB on 32-bit firmware + amd64 OS — normal for this class, still fiddly |
 | **Kinect** | Not a tablet driver issue if only `02b0`; **12 V / charger path** — [kinect-portable-power.md](kinect-portable-power.md) |
 | **CPU / RAM** | Z8350 + **2 GB** — MediaPipe is CPU-bound; usable, not snappy — [PERFORMANCE.md](../PERFORMANCE.md) |
-| **Audio / SOF** | **No working internal speakers** on Linux (lab 2026-07): SOF probe fails → PipeWire **Dummy Output** only. DrakeVox TTS runs but is **silent** on the panel. Kinect mic (USB) is separate. See [DrakeVox / speakers](#drakevox--speakers-rca) · [HARDEN-HARDWARE.md](../HARDEN-HARDWARE.md) |
+| **Audio / speakers** | **Has** RT5651 speakers. Default **SOF** fails → Dummy Output. **SST force** (`dsp_driver=2`) binds `bytcr-rt5651` — works. PipeWire may label sink **Headphones** (UCM name). See [DrakeVox / speakers](#drakevox--speakers-rca). **Reboot caution** — [below](#sst-force--reboot--bios-caution) |
 | **i2c / pinctrl** | Occasional designware timeouts, pinctrl probe errors — same generation as touch flakiness |
 
 **Takeaway for BOM:** fine as a **lab / wipe-load proving** tablet; for **production fleet**, prefer a better-supported SoC (e.g. N100-class) if driver tax stays high. Do not over-invest in Goodix/ACPI heroics on this chassis unless volume forces it.
@@ -162,52 +162,71 @@ Tooltip on Settings brightness shows active **backend** (`sysfs:intel_backlight`
 
 ### DrakeVox / speakers (RCA)
 
-**Symptom:** DrakeVox words appear on screen / in log / in AVI, but **no spoken audio** from the tablet.
+**Hardware:** Yes — panel speakers + Realtek **RT5651** (`ACPI 10EC5651`). This is a **newer** lab unit vs tablet-02 TMAX; speakers are real, not missing.
 
-**Lab root cause (2026-07, tablet-01):** internal codec never binds.
+**Default Linux (no SST force):** SOF claims the DSP and fails → **no** speaker card → PipeWire **Dummy Output** → DrakeVox silent even at 100% volume.
 
 ```text
-sof-audio-acpi-intel-byt … warning: No matching ASoC machine driver found
-sof-audio-acpi-intel-byt … error: sof_probe_work failed err: -19
+sof-audio-acpi-intel-byt … No matching ASoC machine driver found … err: -19
 ```
 
-| What Linux exposes | Result |
-|--------------------|--------|
-| `snd_hdmi_lpe_audio` only (card 0 HDMI LPE) | No panel speaker path |
-| PipeWire default sink | **Dummy Output** @ vol 1.00 |
-| sounddevice default | ALSA `default` → Dummy / null |
-| Kinect USB Audio (`02bb`) | **Input** for spectrum/Record — not tablet speakers |
+**Lab fix validated (2026-07):** force **Intel SST** (not SOF):
 
-Raising volume (app or `wpctl`) **cannot** create a missing speaker sink. Soft reboot / cold boot does **not** fix SOF machine mismatch (ACPI/firmware class problem).
+| Piece | Value |
+|-------|--------|
+| File | `/etc/modprobe.d/sls-audio-sst.conf` (firmware overlay same path) |
+| Option | `options snd-intel-dspcfg dsp_driver=2` |
+| Meaning | On kernel 7.0: `0=auto 1=legacy 2=SST 3=SOF 4=AVS` — use **`2` for SST** |
+| Blacklist | `blacklist snd_sof_acpi_intel_byt` |
+| After change | `update-initramfs -u` then **controlled** reboot (see caution) |
+
+**After success:**
+
+```text
+card 1: bytcrrt5651 — RCA-W101AS23T2-…-WT9S10WW05
+PipeWire sink: “Built-in Audio Headphones” (UCM label — still the speaker path)
+lsmod: snd_soc_sst_bytcr_rt5651, snd_soc_rt5651
+```
+
+Why **Headphones**? ALSA UCM names the default HiFi sink `HiFi: Headphones: sink` on this machine. Not “no speakers.” Unmute **Speaker** as well as Headphone if panel is quiet (`amixer -c1 sset Speaker on`).
+
+| Before SST | After SST |
+|------------|-----------|
+| HDMI LPE + Dummy Output only | `bytcr-rt5651` + Built-in Audio |
+| DrakeVox silent on panel | Can play through default sink (max volume in app still good) |
+| Kinect USB Audio | Still card for **mic** (spectrum/Record) |
+
+#### SST force — reboot / BIOS caution
+
+**Lab (2026-07):** applying the conf + `update-initramfs` + remote `reboot` did **not** always come back cleanly. Operator needed a **manual reboot** and a **BIOS reset**. Disk-side config **survived** BIOS reset (eMMC Linux + `sls-audio-sst.conf` still present; speakers still bound after next boot).
+
+| Do | Avoid |
+|----|--------|
+| Prefer **full power-off** / cold start after initramfs change (this chassis hates soft reboot — same PMIC class) | Blind remote reboot while you have no hands on the unit |
+| Stay at the tablet for first boot after audio modprobe | Assuming BIOS reset is required every time |
+| After **BIOS defaults**: re-check boot order / Secure Boot Off / time if odd | Expecting BIOS to hold Linux audio settings (it doesn’t — audio is kernel/modprobe) |
+
+BIOS reset may wipe **UEFI boot order / setup options** only. It does **not** remove `/etc/modprobe.d/sls-audio-sst.conf`. Re-verify: `aplay -l` shows `bytcrrt5651`.
+
+**Fleet policy:** keep SST force as **RCA / Cherry Trail RT5651** optional (overlay present; install only when needed). Do **not** apply on TMAX without testing.
 
 #### App behavior (all tablets)
 
 On each DrakeVox speak, the app:
 
-1. Unmutes + sets default sink / ALSA Master·PCM to **100%** (`wpctl` / `pactl` / `amixer`)  
-2. Peak-normalizes soft espeak PCM before `sounddevice` play  
-3. espeak CLI fallback uses amplitude **-a 200**
+1. Unmutes + sets default sink / ALSA to **100%**  
+2. Peak-normalizes soft espeak PCM  
+3. espeak CLI fallback **-a 200**
 
-On RCA this runs successfully into **Dummy Output** → still silent. On units with a real sink, speech should be loud without manual volume.
-
-#### Operator / lab notes
-
-| Need | Guidance |
-|------|----------|
-| Hear DrakeVox live on this RCA | Not available until speakers work under Linux (or external USB audio **output** if added later) |
-| Confirm TTS works | Record AVI while DrakeVox fires — word may be mixed into recording even when speakers silent |
-| Spectrum / mic | Use **Kinect USB Audio** after UAC firmware — independent of speakers |
-| TMAX (tablet-02) | Control unit — re-test speakers there; if TMAX has audio, RCA is **hardware/ACPI** |
+With SST bound on RCA, that should drive the real panel path (name may still say Headphones).
 
 ```bash
-# Lab check
-wpctl status | grep -A6 Sinks
-# Dummy Output only → no panel speakers
-dmesg | grep -i sof-audio
-aplay -l
+# Healthy RCA audio
+cat /etc/modprobe.d/sls-audio-sst.conf
+aplay -l   # expect bytcrrt5651
+wpctl status | sed -n '/Sinks/,/Sources/p'
+# Dummy Output only → SST not loaded; check conf + cold power cycle
 ```
-
-**Do not** blacklist SOF hoping for magic — without a matching machine/codec driver there is still no speaker. Optional later experiment (not validated): force legacy SST via `snd-intel-dspcfg dsp_driver=1` — may still fail without a supported machine.
 
 ### OTG port (RCA)
 

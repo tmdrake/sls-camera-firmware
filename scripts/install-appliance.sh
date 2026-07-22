@@ -221,6 +221,17 @@ fi
 # --- gspca blacklist + udev ---
 install -D -m 644 "$OVERLAY/etc/modprobe.d/blacklist-gspca-kinect.conf" \
   /etc/modprobe.d/blacklist-gspca-kinect.conf
+# Cherry Trail RT5651 speakers: force SST not SOF (RCA lab-validated). Skip: SLS_AUDIO_SST=0
+if [[ "${SLS_AUDIO_SST:-1}" != "0" && -f "$OVERLAY/etc/modprobe.d/sls-audio-sst.conf" ]]; then
+  install -D -m 644 "$OVERLAY/etc/modprobe.d/sls-audio-sst.conf" \
+    /etc/modprobe.d/sls-audio-sst.conf
+  echo "Installed sls-audio-sst.conf (dsp_driver=2 SST for RT5651 speakers)"
+  echo "  After first install: update-initramfs -u then COLD power-off/on (not remote soft reboot)."
+  echo "  See docs/devices/rca-w101as23t2.md — lab once needed manual reboot/BIOS defaults if stuck."
+  if command -v update-initramfs >/dev/null 2>&1; then
+    update-initramfs -u 2>/dev/null || true
+  fi
+fi
 install -D -m 644 "$OVERLAY/etc/udev/rules.d/60-sls-kinect.rules" \
   /etc/udev/rules.d/60-sls-kinect.rules
 if [[ -f "$OVERLAY/etc/udev/rules.d/99-sls-backlight.rules" ]]; then
