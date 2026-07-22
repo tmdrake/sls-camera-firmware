@@ -115,6 +115,54 @@ virt-viewer -c qemu:///system -a sls-appliance-phase1
 
 Suggested guest resources: **2 vCPU / 2 GiB RAM / 25–30 GiB disk**.
 
+### Tablet-class resources (required for performance / DrakeVox TTS smoke)
+
+Field tablets are **~2 GiB RAM** + slow Atom (Z8350/Z8300). A fat host VM (8 GiB / 8 vCPU) **will not** catch TTS stalls or RAM thrash from [#13](https://github.com/tmdrake/sls-camera/issues/13).
+
+| Profile | vCPU | RAM | Use |
+|---------|------|-----|-----|
+| **tablet-class (default Phase 1)** | **2** | **2 GiB** | Layout + TTS + app smoke (match virt-install above) |
+| Stress (optional worse case) | **1** | **2 GiB** | Extra-jank TTS / pose only — not daily |
+
+**Check current guest:**
+
+```bash
+virsh -c qemu:///system dominfo sls-appliance-phase1 | grep -E 'CPU\(s\)|Max memory|Used memory'
+# Expect: CPU(s)=2  Max/Used memory ≈ 2097152 KiB (2 GiB)
+```
+
+**Enforce tablet-class (guest should be shut down):**
+
+```bash
+# from firmware tree
+./scripts/vm-tablet-class-resources.sh sls-appliance-phase1
+# or manually:
+virsh -c qemu:///system shutdown sls-appliance-phase1
+# wait until shut off
+virsh -c qemu:///system setmaxmem sls-appliance-phase1 2097152 --config
+virsh -c qemu:///system setmem    sls-appliance-phase1 2097152 --config
+virsh -c qemu:///system setvcpus  sls-appliance-phase1 2 --config --maximum
+virsh -c qemu:///system setvcpus  sls-appliance-phase1 2 --config
+virsh -c qemu:///system start sls-appliance-phase1
+```
+
+**Inside the guest (confirm pressure):**
+
+```bash
+free -h          # ~1.8–2.0 Gi total
+nproc            # 2
+```
+
+**DrakeVox / TTS smoke under this profile** (app pin with #13 fixes):
+
+1. `DISPLAY=:0` run field app (`sls-camera` or `./run.sh` — not `--demo` if testing mic/speakers).  
+2. Spectrum ON if available; wait until UI is live (pose model loaded).  
+3. **DrakeVox now** (or key **O**) several times under load — UI must not multi-second freeze; panel speakers or AVI inject OK.  
+4. **Record** → speak a word mid-REC → stop → AVI has mic + TTS.  
+5. Note wall-clock feel vs desktop host; still not as slow as real Atom, but RAM-bound paths show up.
+
+Do **not** raise Phase 1 to 4–8 GiB for “comfort” and call that field QA.
+
 ---
 
 ## 3. Lubuntu installer (inside the guest only)

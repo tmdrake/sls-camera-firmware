@@ -9,7 +9,7 @@ RCA lab smoke (tablet-01): **boot → SLS app → quit/power-off works**; depth 
 |------|-----|-----|------------------|---------|
 | **tablet-01** RCA W101AS23T2 | Atom x5-**Z8350** (Cherry Trail) | **2 GB** | 1280×800 16:10 | Budget slate — usable field UI, not desktop-fast |
 | **tablet-02** TMAX TM800W610L | Atom x5-**Z8300** | **2 GB** | 1920×1200 16:10 | Same class; more pixels = slightly more fill cost |
-| Phase 1 VM | Host CPU + **llvmpipe** | VM RAM | 1280×800 / 1920×1200 | Worse GPU path than real tablet |
+| Phase 1 VM | Host CPU + **llvmpipe** | **Must be 2 GiB / 2 vCPU** for field-like smoke | 1280×800 / 1920×1200 | Worse GPU path than real tablet; do **not** QA TTS on a fat VM |
 
 Cherry Trail is dual/quad low-power Atom (~1.4–1.9 GHz). Expect MediaPipe pose and Qt composite to dominate CPU time.
 
@@ -33,6 +33,7 @@ Do not expect CUDA, modern OpenVINO NPU, or high-end VAAPI pipelines on Z83x0.
 | Jank + low RAM | 2 GB pressure; desktop chrome still present (see [KIOSK-DESKTOP.md](KIOSK-DESKTOP.md)) |
 | Hot / throttle | Fanless Atom under continuous pose — normal; reduce load or improve ventilation |
 | VM feels worse than tablet | SPICE + llvmpipe; tablet GL is the real path |
+| VM feels *better* than tablet (TTS fine, field not) | Guest has too much RAM/CPU — pin **2 GiB / 2 vCPU** ([VM-REBUILD.md](VM-REBUILD.md) tablet-class) |
 
 ## Tuning (no hardware change)
 
