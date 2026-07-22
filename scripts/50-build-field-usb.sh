@@ -90,8 +90,10 @@ rsync -rltD --delete \
   --exclude 'build/get-pip.py' \
   --exclude 'out/' \
   --exclude 'docs/images/*.ppm' \
+  --exclude 'screenshots' \
   --exclude '.grok/' \
   "$ROOT/" "$MNT/firmware/"
+# FAT32 cannot store symlinks (repo root screenshots -> docs/images). Images: firmware/docs/images/
 # Scripts must be executable when copied to ext4 later; on FAT, install-from-usb uses bash
 find "$MNT/firmware/scripts" -type f -name '*.sh' -exec chmod 755 {} \; 2>/dev/null || true
 
@@ -215,13 +217,17 @@ ip -br a
 # From OptiPlex: ssh sls@TABLET_IP   (password 20260717 after appliance)
 ```
 
-### 3. Run appliance install
+### 3. Run appliance install (also the **upgrade** path)
+
+First install **or** refresh an older appliance **without wiping Lubuntu**:
 
 ```bash
 # mount SLS-MEDIA if not auto-mounted
 cd /media/$USER/SLS-MEDIA    # or /run/media/$USER/SLS-MEDIA
 bash install-from-usb.sh
 ```
+
+Same script re-applies app tree, overlay, and seeds. Future auto-upgrade: [docs/UPGRADE.md](docs/UPGRADE.md).
 
 Install applies (must not skip on rebuild):
 

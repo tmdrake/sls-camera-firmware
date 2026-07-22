@@ -65,5 +65,6 @@
 ## Backlog
 
 - [ ] ARM64 vendor fetch  
-- [ ] OTA update channel (optional)  
+- [ ] **Field upgrade / auto-upgrade** — today: re-run `install-from-usb.sh`; later: version stamp, upgrade-only stick path, optional OTA — [UPGRADE.md](UPGRADE.md)  
+- [ ] OTA update channel (optional; subset of upgrade roadmap)  
 

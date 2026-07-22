@@ -9,6 +9,8 @@ Phase 2 packages that into **operator media**.
 |-------|----------------|--------|
 | **A — Field USB** | Stick: offline firmware + `install-from-usb.sh`; use with stock Lubuntu 26.04 ISO | **Ready** |
 | **B — Single ISO** | One image: OS + appliance | Planned (Cubic / live-build / mkosi) |
+| **Upgrade (interim)** | Re-run `install-from-usb.sh` on existing tablet — no OS wipe | **Works** — see [UPGRADE.md](UPGRADE.md) |
+| **Upgrade (future)** | Version stamp, upgrade-only pack, optional OTA | Roadmap |
 
 ---
 
