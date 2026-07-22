@@ -3,6 +3,26 @@
 Use this when recreating the KVM appliance test guest from scratch.  
 Proven path: **Lubuntu 26.04 x86_64** + `install-appliance.sh` + optional Kinect USB passthrough.
 
+> **Role of this VM:** **app + packaging smoke only.**  
+> Guest sound (SPICE/PipeWire/virtio) is **not** RCA RT5651/SST. Do **not** sign off field speakers, PMIC/Goodix, or tablet touch from the VM.  
+> Installer ship bar = **bare-metal wipe** (RCA / fleet) — [ARCHITECTURE.md](ARCHITECTURE.md) § Validation tracks.  
+> Landscape rotate/CTM and field audio helpers **auto-skip** on hypervisor.
+
+### App-only smoke (what worked well)
+
+Before (or without) treating the guest as a full field appliance, the app already smoked well on the VM:
+
+```bash
+# from host app tree, or guest checkout / /opt/sls-camera after a light install
+cd ~/sls-camera/software/linux/viewer   # or /opt/sls-camera/software/linux/viewer
+./run.sh --demo
+# or:  sls-camera --demo
+# or:  Desktop / Applications → SLS Camera
+```
+
+That path is enough for **UI, Settings, TTS latency, quit codes** under tablet-class resources.  
+Full `install-appliance` / SLS-MEDIA is for **field contracts** (autologin, GRUB, speakers, PMIC, poweroff) — prove those on **RCA**, not by SPICE audio.
+
 ## Lab credentials (standard for rebuilds)
 
 | Role | Username | Password | Notes |

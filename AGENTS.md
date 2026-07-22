@@ -11,6 +11,7 @@ Build tablet/appliance **firmware** for the SLS Camera field app. Do not fork th
 3. **Never force-push** to `main` without user approval.  
 4. Prefer **offline-first** install paths (`vendor/debs`, `vendor/wheels`).  
 5. Destructive scripts (`install-to-device.sh`, disk wipe) must require an explicit env flag (e.g. `I_UNDERSTAND=1`).  
+6. **Hardware-first:** design/validate installer overlay for **field tablets** (RCA/TMAX). Phase 1 **VM = app + packaging smoke only** — not field audio, PMIC, or touch. Do not claim field readiness from VM alone. Field-only pieces may auto-skip on hypervisor (`sls-lock-landscape`, SST/speakers, PMIC).  
 
 ## Key paths
 

@@ -45,6 +45,8 @@ If a temporary ISO install user still exists (e.g. leftover desktop scrap), remo
 
 ## Wipe + reload (field tablet checklist)
 
+**Ship bar for the installer USB is this hardware checklist** — not “VM can run `--demo`.” Phase 1 VM is optional for app UI/TTS latency only ([ARCHITECTURE.md](ARCHITECTURE.md)).
+
 Use a **current SLS-MEDIA** stick (`scripts/50-build-field-usb.sh`; host: `APP_SRC=~/sls-camera` if app fixes are not yet on the remote pin).
 
 1. **Wipe** — Lubuntu 26.04 amd64 UEFI, full disk; Secure Boot Off.  

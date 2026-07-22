@@ -1,5 +1,25 @@
 # Firmware architecture
 
+## Validation tracks (hardware-first)
+
+**One installer**, designed for **field tablets**. The Phase 1 KVM guest is for **app + packaging smoke only** — not field audio, PMIC, or touch truth.
+
+| Track | Where | Truth for |
+|-------|--------|-----------|
+| **Field (RCA first, then TMAX)** | Bare metal + SLS-MEDIA wipe/reload | Speakers (SST + OUT vol), PMIC/Goodix, landscape+CTM, native Kinect USB, Quit→poweroff |
+| **Phase 1 VM** | KVM/QEMU tablet-class (2 GiB / 2 vCPU) | App UI, Settings, TTS *latency* under load, install-appliance script regression |
+
+```text
+VM green ≠ field audio green
+App change  → optional VM --demo / TTS smoke
+Installer / audio / touch / PMIC  → rebuild stick → RCA (or fleet unit)
+Ship bar  → field checklist green
+```
+
+**“Designed for both”** means field defaults + **safe skips** on hypervisor (landscape CTM, SST/speakers, PMIC), not two product installers. See [VM-REBUILD.md](VM-REBUILD.md) and [POWER-AND-DISPLAY.md](POWER-AND-DISPLAY.md).
+
+**Lab lesson:** on the VM, **`./run.sh --demo` / desktop shortcut** was a strong app smoke **before** full appliance install. Keep that for app team; use wipe + SLS-MEDIA on hardware for installer freeze.
+
 ## Boot path (target appliance)
 
 ```text

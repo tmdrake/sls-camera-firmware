@@ -1,7 +1,9 @@
 # Blow-and-go media — build & install
 
-Phase 1 proved **`install-appliance.sh`** on clean Lubuntu 26.04 (VM + contracts with app pin `59ebee6`).  
+Phase 1 proved **`install-appliance.sh`** on clean Lubuntu 26.04 (VM for **app/packaging** smoke; **field ship bar = RCA/tablet wipe**).  
 Phase 2 packages that into **operator media**.
+
+> **Hardware-first:** build and freeze SLS-MEDIA against **real tablets**. VM guest audio ≠ RCA SST speakers. See [ARCHITECTURE.md](ARCHITECTURE.md) § Validation tracks.
 
 | Stage | What you get | Status |
 |-------|----------------|--------|
