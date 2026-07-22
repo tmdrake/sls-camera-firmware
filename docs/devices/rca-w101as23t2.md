@@ -37,7 +37,7 @@
 4. **~29 GB eMMC:** full-disk Lubuntu + `/opt/sls-camera` venv is OK; leave room for `/data/sls-captures`.  
 5. **Kinect:** external brick + USB; after wipe, no VM passthrough script.  
 6. **Goodix / PMIC:** first boot checklist — if no touch, keyboard/SSH fallback; prefer **cold power-off** over soft reboot when platform is weird; appliance enables soft stabilize — [PMIC section](#pmic--warm-reboot-vs-cold-start-rca-lab).  
-7. **Speakers / DrakeVox:** apply **full RCA audio fix** (SST + force Speaker path) — [below](#rca-speaker-fix-full-stack-lab-validated-2026-07). Lab: **unplug OTG** when debugging.  
+7. **Speakers / DrakeVox:** full RCA audio setup (SST + Speaker path + **OUT volume**) — [below](#rca-speaker-fix-full-stack-lab-validated-2026-07). Lab: **unplug OTG** when debugging.  
 
 ## Linux driver reality (lab 2026-07)
 
@@ -165,16 +165,17 @@ Tooltip on Settings brightness shows active **backend** (`sysfs:intel_backlight`
 
 **Goal:** DrakeVox (and any app audio) audible on the **panel speakers**.
 
-**Hardware:** Yes — internal speakers + Realtek **RT5651** (`ACPI 10EC5651`). Newer lab unit than tablet-02 TMAX. Windows uses these speakers; Linux does **not** until both parts below are applied.
+**Hardware:** Yes — internal speakers + Realtek **RT5651** (`ACPI 10EC5651`). Newer lab unit than tablet-02 TMAX. Windows uses these speakers; Linux does **not** until the **full setup stack** below is applied (install-appliance does this when overlay is current).
 
-#### Problem (two independent failures)
+#### Problem (three independent failures)
 
 | # | Failure | Symptom | Without fix |
 |---|---------|---------|-------------|
 | **1** | Default **SOF** DSP path | `sof-audio-acpi-intel-byt: No matching ASoC machine driver` | Only HDMI LPE + PipeWire **Dummy Output** — volume at 100% still silent |
 | **2** | False **Headphone Jack** sense | Jack read-only `values=on` even with nothing plugged | UCM enables **Headphones**, **mutes Speaker** — card exists but panel silent |
+| **3** | **`OUT Playback Volume` = 0** | Card + Speaker on + PipeWire 100% | Still **silent** — codec analog OUT gain left at zero by UCM (lab wipe 2026-07) |
 
-Part 1 alone is not enough: after SST binds `bytcr-rt5651`, PipeWire often still shows **“Built-in Audio Headphones”** and speakers stay off until part 2.
+Parts stack: **1** creates the card → **2** routes to speakers → **3** unmutes the OUT gain. Skipping any step = no DrakeVox on the panel.
 
 #### Fix part 1 — force Intel SST (not SOF)
 
@@ -204,55 +205,79 @@ UCM (`/usr/share/alsa/ucm2/codecs/rt5651/HeadPhones.conf`) turns **Speaker off**
 
 | Piece | Role |
 |-------|------|
-| `/usr/local/bin/sls-audio-speakers` | UCM **Speaker** enable sequence: Speaker/LOUT **on**, HPO/Headphone **off** |
+| `/usr/local/bin/sls-audio-speakers` | UCM **Speaker** enable: Speaker/LOUT **on**, HPO/Headphone **off**, LOUT MIX DAC on |
 | `sls-audio-speakers.service` | Boot oneshot + re-run after ~8 s (after UCM/WirePlumber settle) |
-| App `sls_viewer/tts.py` | Same sequence + **100%** volume on **every** DrakeVox speak |
+| App `sls_viewer/tts.py` | Same on **every** DrakeVox speak |
 
-**Success (part 2):**
+Why PipeWire still says **Headphones**? UCM *name* for the default sink — not “no speakers.” Trust **Speaker Switch [on]** + OUT volume, not the sink label.
 
-```bash
-amixer -c1 sget Speaker    # Mono: Playback [on]
-amixer -c1 cget name='OUT Playback Volume'   # want values=39,39 — 0,0 = silent!
-amixer -c1 sget Headphone  # Playback [off] is OK for panel speakers
-sudo /usr/local/bin/sls-audio-speakers   # one-shot if still quiet
+#### Fix part 3 — `OUT Playback Volume` (setup critical)
+
+**Lab validated (wipe 2026-07):** after parts 1–2, panel was **still silent**. Mixer showed:
+
+```text
+amixer -c1 cget name='OUT Playback Volume'
+  : values=0,0          # silent (−46.5 dB floor)
+# fixed:
+  : values=39,39        # max
 ```
 
-**Lab (2026-07 wipe):** even with `bytcr-rt5651` + Speaker **on** + PipeWire 100%, panel stayed silent because **`OUT Playback Volume` was 0,0**. `sls-audio-speakers` / DrakeVox TTS now force it to **39**.
-Why PipeWire still says **Headphones**? UCM *name* for the default sink — not “no speakers.” Trust **Speaker Switch [on]**, not the sink label.
+PipeWire / app “100%” does **not** move this ALSA control. It must be set explicitly.
 
-#### Full stack checklist (install / wipe)
+| Piece | Action |
+|-------|--------|
+| `sls-audio-speakers` | `cset name='OUT Playback Volume' 39` every boot/run |
+| `tts.py` / DrakeVox | same before each speak |
+| Manual | `amixer -c1 cset name='OUT Playback Volume' 39` |
 
-1. Appliance install (or copy overlay pieces) so both conf + scripts land.  
-2. `update-initramfs -u` if SST conf was just added.  
-3. **Cold power-off → power on** (hands on tablet; avoid unattended soft reboot).  
-4. Lab: **unplug OTG** for soak/audio/touch — [OTG notes](#otg-port-rca--lab-debug-notes).  
-5. Verify:
+**Success (parts 2 + 3):**
 
 ```bash
-test -f /etc/modprobe.d/sls-audio-sst.conf && cat /etc/modprobe.d/sls-audio-sst.conf
-systemctl is-enabled sls-audio-speakers sls-pmic-startup-stabilize
+amixer -c1 sget Speaker                      # Mono: Playback [on]
+amixer -c1 cget name='OUT Playback Volume'   # values=39,39 — not 0,0
+sudo /usr/local/bin/sls-audio-speakers       # one-shot if still quiet
+espeak-ng -a 200 "test"                      # should hear panel
+```
+
+#### Full stack checklist (install / wipe setup)
+
+Part of **normal appliance setup** on RCA (current SLS-MEDIA + `install-from-usb`):
+
+1. Install applies overlay: SST conf, `sls-audio-speakers` + service, app with TTS OUT-volume force.  
+2. `update-initramfs -u` when SST conf is new.  
+3. **Cold power-off → power on** (I2C/codec often need it; avoid soft reboot).  
+4. Lab: **unplug OTG** for soak if touch/audio flaky — [OTG notes](#otg-port-rca--lab-debug-notes).  
+5. **Verify audio setup:**
+
+```bash
+# 1 — card
+test -f /etc/modprobe.d/sls-audio-sst.conf
 aplay -l | grep -i bytcr
+# 2 — speaker path + OUT gain (both required)
+systemctl is-enabled sls-audio-speakers
 amixer -c1 sget Speaker
+amixer -c1 cget name='OUT Playback Volume'    # must be 39,39
+# 3 — hear it
 export XDG_RUNTIME_DIR=/run/user/$(id -u)
-wpctl get-volume @DEFAULT_AUDIO_SINK@   # want unmuted / high
-# Settings → DrakeVox generate, or:
-espeak-ng -a 200 "test"
+wpctl set-volume @DEFAULT_AUDIO_SINK@ 1.0
+espeak-ng -a 200 "setup ok"
+# or Settings → DrakeVox generate
 ```
 
 | Healthy | Broken |
 |---------|--------|
-| `bytcrrt5651` in `aplay -l` | Only HDMI / Dummy Output |
-| `Speaker` Playback **[on]** | Speaker **[off]**, jack stuck on |
-| DrakeVox audible | Word on screen, no sound |
+| `bytcrrt5651` in `aplay -l` | Only HDMI / Dummy Output → part 1 / cold boot |
+| `Speaker` **[on]** | Speaker **[off]** → part 2 / `sls-audio-speakers` |
+| `OUT Playback Volume` **39,39** | **0,0** → part 3 (silent despite “100%”) |
+| DrakeVox / espeak audible | Word on screen only |
 
 #### App behavior (all tablets; critical on RCA)
 
 On each DrakeVox speak (`tts.py`):
 
 1. Unmute + default sink / ALSA **100%** (`wpctl` / `pactl` / `amixer`)  
-2. If a card has **Speaker**: force RT5651 Speaker enable sequence  
+2. If a card has **Speaker**: Speaker/LOUT path + **`OUT Playback Volume` 39**  
 3. Peak-normalize soft espeak PCM; CLI fallback **-a 200**
-
 #### SST force — reboot / BIOS caution
 
 **Lab (2026-07):** conf + `update-initramfs` + **remote soft reboot** once left the unit stuck — operator needed **manual reboot** and a **BIOS reset**. **Cold reboot** after that restored a good state.

@@ -131,7 +131,7 @@ Operator should only need:
 | **`install-from-usb` hangs** (ncurses EULA) | `kinect-audio-setup` asks Microsoft EULA; without debconf preseed, SSH/noninteractive install waits forever. Fixed in install-appliance (preseed before seed apt). Manual: accept **Yes** on tablet, or preseed — [ISO-AND-FIELD-USB.md](ISO-AND-FIELD-USB.md) § Kinect EULA |
 | **Blank screen** on some boots | Launcher waits for X + re-applies landscape; autostart delays 3s. If still blank: SSH, check `launcher.log`, restart `/usr/local/bin/sls-camera`. See [POWER-AND-DISPLAY.md](POWER-AND-DISPLAY.md). |
 | Spectrum silent | `libportaudio2`, Kinect USB Audio after firmware |
-| DrakeVox silent on **RCA** speakers | Apply **full RCA speaker fix** (SST `dsp_driver=2` + `sls-audio-speakers`); cold power cycle; lab unplug OTG — [rca-w101as23t2.md](devices/rca-w101as23t2.md#rca-speaker-fix-full-stack-lab-validated-2026-07) |
+| DrakeVox silent on **RCA** speakers | Check all 3: `bytcrrt5651`, Speaker **on**, **`OUT Playback Volume` 39,39** (0,0 = silent). `sudo sls-audio-speakers`; cold cycle if no card; unplug OTG — [rca speaker setup](devices/rca-w101as23t2.md#rca-speaker-fix-full-stack-lab-validated-2026-07) |
 
 ## Factory reset (Phase 3)
 
