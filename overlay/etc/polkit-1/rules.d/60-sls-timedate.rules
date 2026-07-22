@@ -1,0 +1,13 @@
+// SLS appliance — passwordless set time/timezone/NTP for kiosk user "sls".
+// Source: sls-camera software/linux/docs/DATE-TIME-PRIVS.md (issue #11).
+// App host_time.py uses timedatectl → org.freedesktop.timedate1.
+polkit.addRule(function(action, subject) {
+    if (subject.user !== "sls")
+        return polkit.Result.NOT_HANDLED;
+    if (action.id == "org.freedesktop.timedate1.set-time" ||
+        action.id == "org.freedesktop.timedate1.set-timezone" ||
+        action.id == "org.freedesktop.timedate1.set-ntp") {
+        return polkit.Result.YES;
+    }
+    return polkit.Result.NOT_HANDLED;
+});

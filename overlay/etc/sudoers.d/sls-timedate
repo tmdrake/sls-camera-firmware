@@ -1,0 +1,3 @@
+# Passwordless timedatectl for appliance user (Settings → Date & time).
+# Installed by install-appliance.sh (mode 0440). See DATE-TIME-PRIVS.md.
+sls ALL=(root) NOPASSWD: /usr/bin/timedatectl

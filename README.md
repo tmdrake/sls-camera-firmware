@@ -91,7 +91,7 @@ See [docs/OFFLINE-MIRROR.md](docs/OFFLINE-MIRROR.md).
 
 **Start here (app + FW shared rules):**  
 [FOR-FIRMWARE-TEAM.md](https://github.com/tmdrake/sls-camera/blob/main/software/linux/docs/FOR-FIRMWARE-TEAM.md)  
-— blow-and-go index, offline apt, quit exit 10, **16:10**, polkit format rule, **`--no-auto-level`**, smoke checklist.
+— blow-and-go index, offline apt, quit exit 10, **16:10**, polkit format/timedate rules, **`--no-auto-level`**, smoke checklist.
 
 **Kinect tilt (field):** launcher injects **`--no-auto-level`** by default (no motor move on open). Lab: `SLS_KINECT_AUTO_LEVEL=1` to allow auto-level. LED stays on.
 
@@ -99,6 +99,10 @@ See [docs/OFFLINE-MIRROR.md](docs/OFFLINE-MIRROR.md).
 [FORMAT-MEDIA-PRIVS.md](https://github.com/tmdrake/sls-camera/blob/main/software/linux/docs/FORMAT-MEDIA-PRIVS.md)  
 Overlay (shipped by `install-appliance.sh`):  
 `overlay/etc/polkit-1/rules.d/60-sls-udisks-format.rules`
+
+**Date & time from Settings (no root password):**  
+[DATE-TIME-PRIVS.md](https://github.com/tmdrake/sls-camera/blob/main/software/linux/docs/DATE-TIME-PRIVS.md)  
+Overlay: `60-sls-timedate.rules` + `sudoers.d/sls-timedate`
 
 **Dependency & version-conflict tracking** lives on the app repo (not only here):
 

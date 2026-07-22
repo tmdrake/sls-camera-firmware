@@ -429,6 +429,28 @@ if [[ -f "$OVERLAY/etc/polkit-1/rules.d/60-sls-udisks-format.rules" ]]; then
   echo "Installed polkit rule for UDisks2 format (user ${SLS_USER})"
 fi
 
+# timedatectl polkit: Settings → Date & time without root password (sls-camera #11)
+if [[ -f "$OVERLAY/etc/polkit-1/rules.d/60-sls-timedate.rules" ]]; then
+  install -D -m 644 "$OVERLAY/etc/polkit-1/rules.d/60-sls-timedate.rules" \
+    /etc/polkit-1/rules.d/60-sls-timedate.rules
+  if [[ "$SLS_USER" != "sls" ]]; then
+    sed -i "s/subject.user !== \"sls\"/subject.user !== \"${SLS_USER}\"/" \
+      /etc/polkit-1/rules.d/60-sls-timedate.rules
+  fi
+  systemctl restart polkit 2>/dev/null || true
+  echo "Installed polkit rule for timedatectl (user ${SLS_USER})"
+fi
+if [[ -f "$OVERLAY/etc/sudoers.d/sls-timedate" ]]; then
+  install -D -m 440 "$OVERLAY/etc/sudoers.d/sls-timedate" /etc/sudoers.d/sls-timedate
+  if [[ "$SLS_USER" != "sls" ]]; then
+    sed -i "s/^sls /${SLS_USER} /" /etc/sudoers.d/sls-timedate
+  fi
+  if command -v visudo >/dev/null 2>&1; then
+    visudo -cf /etc/sudoers.d/sls-timedate >/dev/null 2>&1 \
+      || echo "WARN: sudoers.d/sls-timedate failed visudo check" >&2
+  fi
+fi
+
 # captures
 mkdir -p "$DATA_CAPTURES"
 chown -R "$SLS_USER:$SLS_USER" /data 2>/dev/null || chown -R "$SLS_USER:$SLS_USER" "$DATA_CAPTURES"
