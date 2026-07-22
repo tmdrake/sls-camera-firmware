@@ -48,7 +48,7 @@ _is_virtual_machine() {
              /sys/class/dmi/id/chassis_vendor /sys/class/dmi/id/board_name; do
     [[ -r "$dmi" ]] || continue
     case "$(tr '[:upper:]' '[:lower:]' <"$dmi" 2>/dev/null)" in
-      *kvm*|*qemu*|*virtualbox*|*vmware*|*bochs*|*openstack*|*hyper-v*|*virtual machine*)
+      *kvm*|*qemu*|*virtualbox*|*vmware*|*bochs*|*openstack*|*hyper-v*|*virtual*)
         return 0
         ;;
     esac
