@@ -26,28 +26,36 @@ Also common on these units:
 - **32-bit UEFI** bootloaders: `\EFI\UBUNTU\GRUBIA32.EFI`, `\EFI\BOOT\BOOTIA32.EFI` (Cherry Trail) with **amd64** Linux — normal for this class; keep boot order **Ubuntu** first on internal eMMC.
 - Extra USB sticks (SLS-MEDIA, installer) can add **firmware** time probing devices (~few seconds), separate from the 30 s GRUB menu.
 
-## Fix (appliance — applied by `install-appliance.sh`)
+## Fix (required **setup** — applied by `install-appliance.sh`)
+
+**Part of every wipe/reload**, not optional polish. Lab RCA after incomplete install still measured **loader ~38 s** until this was applied.
+
+| Deliverable | Path / action |
+|-------------|----------------|
+| Drop-in | `/etc/default/grub.d/50-sls-recordfail.cfg` (overlay + install) |
+| Main file | `GRUB_RECORDFAIL_TIMEOUT=0` + `GRUB_TIMEOUT=0` in `/etc/default/grub` |
+| Clear sticky | `grub-editenv … unset recordfail` |
+| Rebuild menu | `update-grub` |
 
 ```bash
-# /etc/default/grub
+# What install writes (also in overlay/etc/default/grub.d/50-sls-recordfail.cfg)
 GRUB_TIMEOUT=0
 GRUB_RECORDFAIL_TIMEOUT=0
 
-sudo grub-editenv /boot/grub/grubenv unset recordfail   # clear sticky flag
+sudo grub-editenv /boot/grub/grubenv unset recordfail
 sudo update-grub
 ```
 
-After that, hard power-off should **not** cost an extra half minute at GRUB.
+After that, hard power-off should **not** cost an extra half minute at GRUB. Listed on [FIRST-BOOT.md](FIRST-BOOT.md) wipe checklist.
 
 ## Manual check
 
 ```bash
-systemd-analyze                    # look at "loader" time
+systemd-analyze                    # "loader" should not be ~30–38s
 sudo cat /boot/grub/grubenv        # recordfail=1?
-grep TIMEOUT /etc/default/grub
+grep -r RECORDFAIL /etc/default/grub /etc/default/grub.d/
 sudo efibootmgr -v                 # BootOrder: Ubuntu on eMMC first
 ```
-
 ## Shutdown / reboot hygiene
 
 | Prefer | Avoid |

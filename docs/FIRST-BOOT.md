@@ -37,10 +37,41 @@ Use a **current SLS-MEDIA** stick (`scripts/50-build-field-usb.sh`; host: `APP_S
 
 1. **Wipe** — Lubuntu 26.04 amd64 UEFI, full disk; Secure Boot Off.  
 2. Boot to eMMC → plug **SLS-MEDIA** → `bash install-from-usb.sh`.  
-3. Expect install to apply: freenect/Kinect audio seeds, landscape, quiet session, HW harden services, **RCA speakers** (SST + `sls-audio-speakers` incl. **OUT volume**), backlight udev, PMIC stabilize (when overlay present).  
+3. Expect install to apply: freenect/Kinect audio seeds, landscape, quiet session, HW harden, **GRUB recordfail=0** (no ~30 s “EFI” hang), **RCA speakers** (SST + OUT volume), backlight udev, PMIC stabilize.  
 4. **Cold power cycle** (especially RCA).  
 5. Lab: **unplug OTG** for touch/audio soak after bring-up.  
-6. Verify: app autostart, brightness ±, DrakeVox **audible** on RCA — see checklist below; Kinect depth when 12 V OK.
+6. Verify: **fast GRUB** (below), app autostart, brightness ±, DrakeVox audible on RCA, Kinect depth when 12 V OK.
+
+### GRUB / “EFI” long boot delay (part of setup — all tablets)
+
+Unclean power-off sets GRUB **`recordfail`** → default **~30 s** menu. Looks like an EFI hang; `systemd-analyze` shows it as **loader ~30–38 s**.
+
+**Install must set** (via `install-appliance` / SLS-MEDIA):
+
+| File | Setting |
+|------|---------|
+| `/etc/default/grub.d/50-sls-recordfail.cfg` | `GRUB_TIMEOUT=0` + `GRUB_RECORDFAIL_TIMEOUT=0` |
+| `/etc/default/grub` | same `RECORDFAIL` pin + `update-grub` |
+| `/boot/grub/grubenv` | `recordfail` cleared |
+
+```bash
+# Verify after install
+grep -r RECORDFAIL /etc/default/grub /etc/default/grub.d/ 2>/dev/null
+# expect GRUB_RECORDFAIL_TIMEOUT=0
+sudo cat /boot/grub/grubenv          # should not stick recordfail=1 after clean boot
+systemd-analyze                      # loader should not be ~30–38s
+```
+
+**Manual if missing (partial install / old stick):**
+
+```bash
+echo 'GRUB_TIMEOUT=0
+GRUB_RECORDFAIL_TIMEOUT=0' | sudo tee /etc/default/grub.d/50-sls-recordfail.cfg
+sudo grub-editenv /boot/grub/grubenv unset recordfail
+sudo update-grub
+```
+
+Detail: [EFI-BOOT.md](EFI-BOOT.md).
 
 ### RCA speaker setup (part of install — tablet-01)
 

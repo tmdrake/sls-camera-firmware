@@ -175,6 +175,7 @@ sudo poweroff   # then power on
 |--------|--|
 | Autologin | user **`sls`** (SDDM) |
 | Session | **Lubuntu/LXQt still installed** — app is fullscreen on top; desktop is not deleted ([KIOSK-DESKTOP.md](KIOSK-DESKTOP.md)) |
+| Boot time | **No ~30 s GRUB hang** — `GRUB_RECORDFAIL_TIMEOUT=0` ([EFI-BOOT.md](EFI-BOOT.md)); `systemd-analyze` loader ≪ 30 s |
 | App | SLS Camera starts |
 | Quit | Power off (app exit 10 + launcher) |
 | Captures | `/data/sls-captures` and/or stick `sls-captures/` if Auto + mounted |

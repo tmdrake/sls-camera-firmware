@@ -49,7 +49,7 @@ This unit **can** run the SLS appliance (Lubuntu 26.04, autologin, app, quit→p
 | **Goodix touch** | Usually OK in field (**OTG port not used** for normal SLS). Lab only: hub/NIC on **OTG** killed Goodix (I2C -110); unplug restored touch — [TOUCH-GOODIX.md](../TOUCH-GOODIX.md) |
 | **PMIC / warm reboot** | Soft reboot often leaves **weird** touch/I2C/charge state; **cold start** fixes most. Software helper mitigates, does not replace cold off — [below](#pmic--warm-reboot-vs-cold-start-rca-lab) |
 | **Brightness (Settings)** | App owns ±10%; often **broken** until video-group sysfs write + prefer `intel_backlight` — [below](#brightness-settings-rca) · [POWER-AND-DISPLAY.md](../POWER-AND-DISPLAY.md) |
-| **Boot delay ~30 s** | Usually GRUB **recordfail** after hard off (fixed with `GRUB_RECORDFAIL_TIMEOUT=0`) — [EFI-BOOT.md](../EFI-BOOT.md); residual OEM EFI quirks possible |
+| **Boot delay ~30 s** | GRUB **recordfail** after hard off — **setup must set** `GRUB_RECORDFAIL_TIMEOUT=0` (install + `grub.d/50-sls-recordfail.cfg`). Lab wipe still saw loader ~38 s when this was skipped. — [EFI-BOOT.md](../EFI-BOOT.md) · [FIRST-BOOT.md](../FIRST-BOOT.md) |
 | **UEFI** | **ia32** GRUB on 32-bit firmware + amd64 OS — normal for this class, still fiddly |
 | **Kinect** | Not a tablet driver issue if only `02b0`; **12 V / charger path** — [kinect-portable-power.md](kinect-portable-power.md) |
 | **CPU / RAM** | Z8350 + **2 GB** — MediaPipe is CPU-bound; usable, not snappy — [PERFORMANCE.md](../PERFORMANCE.md) |
