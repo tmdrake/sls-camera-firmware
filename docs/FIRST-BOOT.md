@@ -123,6 +123,43 @@ Lab VM credentials: **`sls` / `20260717`** — see [VM-REBUILD.md](VM-REBUILD.md
 
 Launcher debug log (guest): `/data/sls-captures/launcher.log` (or `/tmp/sls-camera-launcher.log`).
 
+### SDDM autologin (required setup)
+
+Install must leave:
+
+| File | Content |
+|------|---------|
+| `/etc/sddm.conf.d/50-sls-autologin.conf` | `User=sls`, `Session=Lubuntu`, **`Relogin=true`** |
+| `/etc/sddm.conf` `[Autologin]` | same (Lubuntu sometimes only had User/Session without Relogin) |
+
+**Lab wipe (2026-07):** after partial install, greeter stuck — `50-sls-autologin.conf` **missing**, and journal:
+
+```text
+sddm-helper (... --user sls --autologin) crashed (exit code 1)
+Auth: sddm-helper exited with 9
+Greeter session started successfully
+```
+
+Without **`Relogin=true`**, a failed first autologin leaves the password greeter. Also ensure `~/.config` is owned by **`sls`** (not root) after install.
+
+```bash
+# Verify
+cat /etc/sddm.conf.d/50-sls-autologin.conf
+grep -A5 '\[Autologin\]' /etc/sddm.conf
+# Fix
+sudo tee /etc/sddm.conf.d/50-sls-autologin.conf <<'EOF'
+[Autologin]
+User=sls
+Session=Lubuntu
+Relogin=true
+EOF
+sudo chown -R sls:sls /home/sls/.config
+sudo systemctl restart sddm
+# or reboot — expect no greeter; app autostart
+journalctl -u sddm -b --no-pager | tail -30
+# look for: Authentication for user "sls" successful / Session started
+```
+
 ### Login screen once instead of autologin
 
 SDDM can drop to the greeter if the session **crashes** or is torn down mid-boot. With **`Relogin=true`**, the next attempt should autologin again as `sls`. Check:
@@ -131,7 +168,6 @@ SDDM can drop to the greeter if the session **crashes** or is torn down mid-boot
 journalctl -u sddm -b
 # look for: sddm-helper crashed / Authentication error
 ```
-
 ### Screenshots (Phase 1 VM — Lubuntu 26.04)
 
 Full-size PNGs live in [`docs/images/`](images/README.md).

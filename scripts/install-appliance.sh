@@ -490,18 +490,35 @@ Relogin=true
 EOF
   fi
   # Lubuntu ships lubuntu_settings / sddm.conf with User=install-user — override
+  # Always include Relogin=true so a failed/crashed session does not stick on greeter
   if [[ -f /etc/sddm.conf ]]; then
     if grep -q '^\[Autologin\]' /etc/sddm.conf; then
       sed -i "/^\[Autologin\]/,/^\[/{s/^User=.*/User=$SLS_USER/; s/^Session=.*/Session=Lubuntu/}" /etc/sddm.conf \
         || true
+      if grep -q '^Relogin=' /etc/sddm.conf; then
+        sed -i 's/^Relogin=.*/Relogin=true/' /etc/sddm.conf || true
+      else
+        sed -i "/^\[Autologin\]/a Relogin=true" /etc/sddm.conf || true
+      fi
     else
-      printf '\n[Autologin]\nUser=%s\nSession=Lubuntu\n' "$SLS_USER" >>/etc/sddm.conf
+      printf '\n[Autologin]\nUser=%s\nSession=Lubuntu\nRelogin=true\n' "$SLS_USER" >>/etc/sddm.conf
     fi
+  else
+    cat >/etc/sddm.conf <<EOF
+[Autologin]
+User=$SLS_USER
+Session=Lubuntu
+Relogin=true
+EOF
   fi
   if [[ -f /etc/sddm.conf.d/lubuntu_settings.conf ]]; then
     sed -i "s/^User=.*/User=$SLS_USER/" /etc/sddm.conf.d/lubuntu_settings.conf 2>/dev/null || true
   fi
-  echo "Configured SDDM autologin for $SLS_USER"
+  # Partial installs often left root-owned ~/.config/autostart — breaks session hygiene
+  if [[ -d "/home/$SLS_USER" ]]; then
+    chown -R "$SLS_USER:$SLS_USER" "/home/$SLS_USER/.config" 2>/dev/null || true
+  fi
+  echo "Configured SDDM autologin for $SLS_USER (Relogin=true — see docs/FIRST-BOOT.md)"
 fi
 
 # GDM autologin if present
