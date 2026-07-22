@@ -212,10 +212,12 @@ UCM (`/usr/share/alsa/ucm2/codecs/rt5651/HeadPhones.conf`) turns **Speaker off**
 
 ```bash
 amixer -c1 sget Speaker    # Mono: Playback [on]
+amixer -c1 cget name='OUT Playback Volume'   # want values=39,39 — 0,0 = silent!
 amixer -c1 sget Headphone  # Playback [off] is OK for panel speakers
 sudo /usr/local/bin/sls-audio-speakers   # one-shot if still quiet
 ```
 
+**Lab (2026-07 wipe):** even with `bytcr-rt5651` + Speaker **on** + PipeWire 100%, panel stayed silent because **`OUT Playback Volume` was 0,0**. `sls-audio-speakers` / DrakeVox TTS now force it to **39**.
 Why PipeWire still says **Headphones**? UCM *name* for the default sink — not “no speakers.” Trust **Speaker Switch [on]**, not the sink label.
 
 #### Full stack checklist (install / wipe)
