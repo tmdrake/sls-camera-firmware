@@ -15,14 +15,40 @@ Cherry Trail is dual/quad low-power Atom (~1.4–1.9 GHz). Expect MediaPipe po
 
 ## What is already accelerated
 
-| Subsystem | Typical on RCA lab | Notes |
-|-----------|-------------------|--------|
-| **Qt / OpenGL ES** | Mesa **Intel HD Graphics (CHV)** | Real tablet GL — *not* software llvmpipe (VM uses llvmpipe) |
-| **Depth/IR capture** | freenect over USB | Limited by USB + Kinect power, not GPU |
-| **Pose (MediaPipe)** | **CPU + XNNPACK** | Main cost; **not** in Kinect/freenect API (Windows SDK had skeleton in-runtime — app team follow-up in `sls-camera` TODO) |
-| **App target rate** | ~**20 FPS** (`target_fps` in viewer config) | Composite / record path; pose may not hit every frame on 2 GB |
+### Live probe — tablet-01 RCA (2026-07-24, `sls-w101as23t2` / `.226`)
 
-Do not expect CUDA, modern OpenVINO NPU, or high-end VAAPI pipelines on Z83x0.
+| Item | Measured |
+|------|----------|
+| SoC GPU | **Intel HD Graphics Cherryview (CHV)** — PCI **8086:22b0** |
+| Kernel DRM | **`i915`** → `/dev/dri/card1` + `renderD128` |
+| Mesa display / GL | **Gallium `crocus`** (Xorg: `DRI driver: crocus`, AIGLX crocus) |
+| Mesa package | **26.0.3** (`libgl1-mesa-dri`, `mesa-libgallium`, …) |
+| MediaPipe EGL probe | `GL … renderer: **Mesa Intel(R) HD Graphics (CHV)**` (hardware GL, **not** llvmpipe) |
+| MediaPipe inference | Still **`XNNPACK` delegate for CPU** — GL context exists; **pose math is CPU** |
+| OpenCV (venv 5.0) | **FFMPEG YES**; **VA: NO**; OpenCL **built YES** but **`haveOpenCL False`** at runtime |
+| Record / composite | **CPU** OpenCV MJPEG + numpy — **no VAAPI encode path** |
+| App process | Holds FDs on `/dev/dri/card1` (compositor/Qt display); **not** a GPU video encode session |
+
+```text
+Kinect USB → freenect (CPU)
+  → OpenCV colorize/resize/draw (CPU)
+  → MediaPipe pose: EGL/CHV GL may init, inference = XNNPACK CPU
+  → OpenCV MJPEG record (CPU)
+  → Qt QPixmap blit (display; Mesa crocus for chrome/GL clients)
+```
+
+### Summary table
+
+| Subsystem | On RCA lab (measured) | Notes |
+|-----------|----------------------|--------|
+| **Display / Mesa** | **crocus** + **Intel HD (CHV)** | Real tablet GL — *not* software llvmpipe (VM often llvmpipe) |
+| **Depth/IR capture** | freenect over USB | Limited by USB + Kinect **12 V**, not GPU |
+| **Pose (MediaPipe)** | **CPU + XNNPACK** | Main cost; Windows SDK skeleton path is different |
+| **Record** | OpenCV **MJPEG CPU** @ 1280×720 / 20 fps default | Atom often can’t sustain → wall clock ≫ file duration |
+| **VAAPI / NVENC** | **Not used** (VA not in OpenCV build path we ship) | Don’t expect hardware H.264 for SLS AVI today |
+| **App target rate** | ~**20 FPS** (`target_fps` / `record_fps`) | Cap to 15 later if needed |
+
+Do not expect CUDA, modern OpenVINO NPU, or high-end VAAPI pipelines on Z83x0. **Having CHV + crocus does not mean pose/record are GPU-accelerated.**
 
 ## Symptom → likely cause
 
